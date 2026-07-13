@@ -33,15 +33,6 @@ rationale:
 7. Insecure File Upload
 8. Missing / Misconfigured Security Headers
 
-## Scope & Boundaries
-
-This project targets **local demo applications only**. It must never be
-pointed at public applications, client systems, production environments, or
-third-party infrastructure without explicit written authorization. See
-[`docs/ethical-rules.md`](docs/ethical-rules.md) for the full policy.
-
-## Status
-
 🚧 Week 1 — Architecture & Rule Design (in progress)
 
 ## Quick Start
