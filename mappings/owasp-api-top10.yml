@@ -1,0 +1,12 @@
+# OWASP API Security Top 10 (2023) — mapping used by the normalizer.
+# Draft for Week 1.
+
+API1:2023:
+  name: Broken Object Level Authorization
+  applies_to:
+    - Broken Object Level Authorization (IDOR)
+
+API3:2023:
+  name: Broken Object Property Level Authorization
+  applies_to:
+    - Mass Assignment

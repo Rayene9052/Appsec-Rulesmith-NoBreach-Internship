@@ -1,0 +1,43 @@
+# CWE mapping — draft, to be filled in fully per-rule as DAST/SAST rules
+# are written (Weeks 3-5). Listed here so the normalizer schema has a real
+# file to load starting Week 1.
+
+CWE-639:
+  name: Authorization Bypass Through User-Controlled Key
+  applies_to:
+    - Broken Object Level Authorization (IDOR)
+
+CWE-862:
+  name: Missing Authorization
+  applies_to:
+    - Broken Access Control (missing admin authorization)
+
+CWE-918:
+  name: Server-Side Request Forgery (SSRF)
+  applies_to:
+    - Server-Side Request Forgery
+
+CWE-915:
+  name: Improperly Controlled Modification of Dynamically-Determined Object Attributes
+  applies_to:
+    - Mass Assignment
+
+CWE-347:
+  name: Improper Verification of Cryptographic Signature
+  applies_to:
+    - Insecure JWT Handling
+
+CWE-943:
+  name: Improper Neutralization of Special Elements in Data Query Logic
+  applies_to:
+    - NoSQL Injection
+
+CWE-434:
+  name: Unrestricted Upload of File with Dangerous Type
+  applies_to:
+    - Insecure File Upload
+
+CWE-1021:
+  name: Improper Restriction of Rendered UI Layers or Frames / missing hardening headers
+  applies_to:
+    - Missing / Misconfigured Security Headers

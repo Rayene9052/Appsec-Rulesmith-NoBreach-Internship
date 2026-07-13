@@ -1,0 +1,6 @@
+{
+  "name": "nobreach-appsec-rulesmith",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Custom AppSec testing rules, vulnerability detection & secure code validation platform (No Breach internship project)."
+}

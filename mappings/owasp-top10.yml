@@ -1,0 +1,35 @@
+# OWASP Top 10 (2021) — mapping used by the normalizer.
+# Draft for Week 1. Extend recommendation/description fields as knowledge
+# base entries are written in Week 7.
+
+A01:2021:
+  name: Broken Access Control
+  applies_to:
+    - Broken Object Level Authorization (IDOR)
+    - Broken Access Control (missing admin authorization)
+    - Mass Assignment (Broken Object Property Level Authorization)
+
+A02:2021:
+  name: Cryptographic Failures
+  applies_to:
+    - Insecure JWT Handling
+
+A03:2021:
+  name: Injection
+  applies_to:
+    - NoSQL Injection
+
+A04:2021:
+  name: Insecure Design
+  applies_to:
+    - Insecure File Upload
+
+A05:2021:
+  name: Security Misconfiguration
+  applies_to:
+    - Missing / Misconfigured Security Headers
+
+A10:2021:
+  name: Server-Side Request Forgery (SSRF)
+  applies_to:
+    - Server-Side Request Forgery
