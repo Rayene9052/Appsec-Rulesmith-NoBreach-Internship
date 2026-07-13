@@ -26,7 +26,11 @@ pip install -r requirements.txt
 ```
 
 `requirements.txt` will be populated starting Week 2 with, at minimum:
-`requests`, `pyyaml`, `semgrep`, `bandit`, `pyjwt`.
+`requests`, `pyyaml`, `semgrep`, `bandit`, `pyjwt`, `lxml`, `jinja2`.
+
+`lxml` and `jinja2` back the intentionally vulnerable XXE and SSTI demo
+endpoints respectively — both are also used, configured securely, in
+`apps/secure-api/` from Week 6 onward.
 
 ## 4. Node Environment (for demo frontend / ESLint security rules)
 
@@ -64,14 +68,19 @@ semgrep --config rules/sast/semgrep/ apps/vulnerable-api/
 bandit -r apps/vulnerable-api/ -c rules/sast/bandit/config.yml
 ```
 
+SAST is the primary detection method for insecure deserialization
+(`pickle`/`yaml.load` usage) and one of two methods for XXE (parser
+configuration), so `semgrep`/`bandit` runs matter for this project beyond
+just style checks.
+
 ## 7. Network / Target Safety
 
 All tooling in this project must only target `localhost`/`127.0.0.1` or the
-Docker Compose internal network. This applies both to the DAST engine's own
-requests and to the SSRF demo feature's outbound requests. See
-[`docs/ethical-rules.md`](ethical-rules.md) for the enforced policy — the
-DAST engine will validate the target host against an allowlist before
-sending any request (implemented Week 3).
+Docker Compose internal network. This applies to the DAST engine's own
+requests, to the SSRF demo feature's outbound requests, and to the XXE demo
+feature's external entity resolution — the vulnerable XML parser must only
+be able to reach local, sandboxed test files, never the real filesystem or
+network.
 
 ## 8. Directory Reference
 
