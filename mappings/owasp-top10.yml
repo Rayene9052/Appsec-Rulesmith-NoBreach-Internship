@@ -18,6 +18,7 @@ A03:2021:
   name: Injection
   applies_to:
     - NoSQL Injection
+    - Server-Side Template Injection (SSTI)
 
 A04:2021:
   name: Insecure Design
@@ -28,6 +29,12 @@ A05:2021:
   name: Security Misconfiguration
   applies_to:
     - Missing / Misconfigured Security Headers
+    - XML External Entity (XXE) Injection
+
+A08:2021:
+  name: Software and Data Integrity Failures
+  applies_to:
+    - Insecure Deserialization
 
 A10:2021:
   name: Server-Side Request Forgery (SSRF)

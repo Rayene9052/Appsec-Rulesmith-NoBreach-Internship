@@ -41,3 +41,16 @@ CWE-1021:
   name: Improper Restriction of Rendered UI Layers or Frames / missing hardening headers
   applies_to:
     - Missing / Misconfigured Security Headers
+CWE-611:
+  name: Improper Restriction of XML External Entity Reference
+  applies_to:
+    - XML External Entity (XXE) Injection
+
+CWE-1336:
+  name: Improper Neutralization of Special Elements Used in a Template Engine
+  applies_to:
+    - Server-Side Template Injection (SSTI)
+CWE-502:
+  name: Deserialization of Untrusted Data
+  applies_to:
+    - Insecure Deserialization
