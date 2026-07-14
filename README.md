@@ -33,8 +33,10 @@ rationale:
 7. Insecure File Upload
 8. Missing / Misconfigured Security Headers
 
-🚧 Week 1 — Architecture & Rule Design (in progress)
 
+
+✅ Week 1 — Architecture & Rule Design
+🚧 Week 2 — Vulnerable web & API demo application (in progress)
 ## Quick Start
 
 > Full instructions in [`docs/setup.md`](docs/setup.md). This section will
