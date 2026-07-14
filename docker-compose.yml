@@ -1,0 +1,20 @@
+services:
+  vulnerable-api:
+    build: ./apps/vulnerable-api
+    container_name: nobreach-vulnerable-api
+    ports:
+      - "8080:8080"
+    networks:
+      - nobreach-internal
+    depends_on:
+      - internal-service
+
+  internal-service:
+    image: kennethreitz/httpbin
+    container_name: nobreach-internal-service
+    networks:
+      - nobreach-internal
+
+networks:
+  nobreach-internal:
+    driver: bridge
