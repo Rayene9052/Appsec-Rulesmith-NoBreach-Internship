@@ -20,40 +20,53 @@ rules. It combines:
 
 ## Vulnerability Focus
 
-Eight curated, non-overlapping vulnerability classes — see
+Eleven curated, non-overlapping vulnerability classes — see
 [`docs/vulnerability-list.md`](docs/vulnerability-list.md) for the full
 rationale:
 
 1. Broken Object Level Authorization (IDOR)
 2. Broken Access Control (missing admin authorization)
-3. Server-Side Request Forgery (SSRF)
-4. Mass Assignment (Broken Object Property Level Authorization)
+3. Mass Assignment (Broken Object Property Level Authorization)
+4. Server-Side Request Forgery (SSRF)
 5. Insecure JWT Handling
-6. NoSQL Injection
-7. Insecure File Upload
-8. Missing / Misconfigured Security Headers
+6. NoSQL Injection (simulated)
+7. Server-Side Template Injection (SSTI)
+8. Insecure File Upload
+9. Missing / Misconfigured Security Headers
+10. XML External Entity Injection (XXE)
+11. Insecure Deserialization
 
+## Scope & Boundaries
 
+This project targets **local demo applications only**. It must never be
+pointed at public applications, client systems, production environments, or
+third-party infrastructure without explicit written authorization. See
+[`docs/ethical-rules.md`](docs/ethical-rules.md) for the full policy.
+
+## Status
 
 ✅ Week 1 — Architecture & Rule Design
 🚧 Week 2 — Vulnerable web & API demo application (in progress)
-## Quick Start
 
-> Full instructions in [`docs/setup.md`](docs/setup.md). This section will
-> be updated as the demo applications come online in Week 2.
+## Quick Start
 
 ```bash
 git clone <repo-url>
-cd nobreach-appsec-rulesmith
+cd Appsec-Rulesmith-NoBreach-Intenrship
 docker compose up -d
+curl http://localhost:8080/health
 ```
+
+See [`docs/vulnerable-routes.md`](docs/vulnerable-routes.md) for every
+endpoint and how to trigger each vulnerability, and
+[`docs/setup.md`](docs/setup.md) for full setup instructions.
 
 ## Repository Layout
 
 See [`docs/architecture.md`](docs/architecture.md) for the full breakdown of
-each component and how the pieces fit together. Folders for the demo apps,
-rule engine, and reports will be added as they're built, starting Week 2 —
-this repo intentionally doesn't scaffold empty directories ahead of time.
+each component and how the pieces fit together. Folders for the rule
+engine, rules, and reports will be added as they're built, starting Week 3
+— this repo intentionally doesn't scaffold empty directories ahead of time.
 
 ## Roadmap
 
