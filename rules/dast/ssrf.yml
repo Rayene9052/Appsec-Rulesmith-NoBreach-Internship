@@ -8,7 +8,7 @@
   body:
     url: "http://internal-service/get"
   check_type: response_indicator
-  expected_indicator: '"origin"'
+  expected_indicator: "origin"
   owasp: A10:2021
   cwe: CWE-918
   recommendation: >
