@@ -1,0 +1,18 @@
+- id: NB-APPSEC-003
+  name: Mass Assignment via Profile Update
+  category: Access Control
+  severity: High
+  method: PUT
+  path: /profile/1
+  auth: alice
+  body:
+    role: admin
+  check_type: response_indicator
+  expected_indicator: '"role": "admin"'
+  owasp: A01:2021
+  owasp_api: API3:2023
+  cwe: CWE-915
+  recommendation: >
+    Apply an explicit allowlist of fields a client is permitted to
+    update (e.g. email, display name) instead of merging the entire
+    request body into the stored record.

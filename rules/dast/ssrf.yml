@@ -1,0 +1,17 @@
+- id: NB-APPSEC-004
+  name: Server-Side Request Forgery via Webhook Preview
+  category: Request Forgery
+  severity: High
+  method: POST
+  path: /webhook/preview
+  auth: none
+  body:
+    url: "http://internal-service/get"
+  check_type: response_indicator
+  expected_indicator: '"origin"'
+  owasp: A10:2021
+  cwe: CWE-918
+  recommendation: >
+    Restrict outbound requests to an explicit allowlist of external
+    hosts, block requests to private/internal IP ranges, and never let
+    a client fully control the target URL of a server-side request.

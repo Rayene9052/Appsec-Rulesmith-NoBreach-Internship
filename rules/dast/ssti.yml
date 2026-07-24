@@ -1,0 +1,17 @@
+- id: NB-APPSEC-006
+  name: Server-Side Template Injection via Render Endpoint
+  category: Injection
+  severity: Critical
+  method: POST
+  path: /render
+  auth: none
+  body:
+    name: "{{ 7*7 }}"
+  check_type: response_indicator
+  expected_indicator: "Hello, 49!"
+  owasp: A03:2021
+  cwe: CWE-1336
+  recommendation: >
+    Never splice user input directly into template source. Pass user
+    data in as template *context/data* instead, so it is rendered as a
+    literal value rather than compiled as template syntax.

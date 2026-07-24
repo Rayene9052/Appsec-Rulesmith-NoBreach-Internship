@@ -1,0 +1,32 @@
+- id: NB-APPSEC-001
+  name: Broken Object Level Authorization on Profile Endpoint (IDOR)
+  category: Access Control
+  severity: High
+  method: GET
+  path: /profile/2
+  auth: alice
+  check_type: response_indicator
+  expected_indicator: "bob@example.com"
+  owasp: A01:2021
+  owasp_api: API1:2023
+  cwe: CWE-639
+  recommendation: >
+    Verify the authenticated user's ID matches the requested user_id
+    before returning profile data, instead of only checking that a
+    token is present and valid.
+
+- id: NB-APPSEC-002
+  name: Broken Access Control on Admin Endpoint
+  category: Access Control
+  severity: Critical
+  method: GET
+  path: /admin/users
+  auth: none
+  check_type: response_indicator
+  expected_indicator: "password"
+  owasp: A01:2021
+  cwe: CWE-862
+  recommendation: >
+    Require a valid admin-role token before returning this endpoint's
+    data. Returning sensitive fields like passwords with no
+    authentication at all is a critical finding.

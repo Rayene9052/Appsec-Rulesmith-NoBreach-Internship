@@ -1,0 +1,17 @@
+- id: NB-APPSEC-005
+  name: NoSQL Injection via Search Filter
+  category: Injection
+  severity: High
+  method: POST
+  path: /search
+  auth: none
+  body:
+    username: "x' or True or 'x"
+  check_type: response_indicator
+  expected_indicator: "admin@nobreach.local"
+  owasp: A03:2021
+  cwe: CWE-943
+  recommendation: >
+    Never evaluate user-controlled input as code or as part of a query
+    expression. Compare filter values as literal strings, or use a
+    parameterized query API if a real database is introduced.

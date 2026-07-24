@@ -1,0 +1,45 @@
+- id: NB-APPSEC-007
+  name: Missing Content-Security-Policy Header
+  category: Security Misconfiguration
+  severity: Medium
+  method: GET
+  path: /health
+  auth: none
+  check_type: header_absent
+  expected_indicator: Content-Security-Policy
+  owasp: A05:2021
+  cwe: CWE-1021
+  recommendation: >
+    Set a Content-Security-Policy header on all responses to reduce the
+    impact of injected scripts and restrict allowed content sources.
+
+- id: NB-APPSEC-008
+  name: Missing Strict-Transport-Security Header
+  category: Security Misconfiguration
+  severity: Medium
+  method: GET
+  path: /health
+  auth: none
+  check_type: header_absent
+  expected_indicator: Strict-Transport-Security
+  owasp: A05:2021
+  cwe: CWE-1021
+  recommendation: >
+    Set a Strict-Transport-Security header to enforce HTTPS once the
+    application is deployed behind TLS.
+
+- id: NB-APPSEC-009
+  name: Missing X-Content-Type-Options Header
+  category: Security Misconfiguration
+  severity: Low
+  method: GET
+  path: /health
+  auth: none
+  check_type: header_absent
+  expected_indicator: X-Content-Type-Options
+  owasp: A05:2021
+  cwe: CWE-1021
+  recommendation: >
+    Set "X-Content-Type-Options: nosniff" on all responses to prevent
+    browsers from MIME-sniffing responses away from their declared
+    content type.
