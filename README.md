@@ -40,8 +40,11 @@ rationale:
 ## Status
 
 ✅ Week 1 — Architecture & Rule Design
+
 ✅ Week 2 — Vulnerable web & API demo application (11 routes implemented, verified)
+
 ✅ Week 3 — Custom DAST rule engine (9 rules across 6 vulnerability classes, verified)
+
 🚧 Week 4 — Advanced AppSec rules (next up)
 
 ## Quick Start
