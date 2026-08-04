@@ -36,16 +36,20 @@ rationale:
 10. XML External Entity Injection (XXE)
 11. Insecure Deserialization
 
+## Scope & Boundaries
+
+This project targets **local demo applications only**. It must never be
+pointed at public applications, client systems, production environments, or
+third-party infrastructure without explicit written authorization. See
+[`docs/ethical-rules.md`](docs/ethical-rules.md) for the full policy.
 
 ## Status
 
 ✅ Week 1 — Architecture & Rule Design
-
 ✅ Week 2 — Vulnerable web & API demo application (11 routes implemented, verified)
-
 ✅ Week 3 — Custom DAST rule engine (9 rules across 6 vulnerability classes, verified)
-
-🚧 Week 4 — Advanced AppSec rules (next up)
+✅ Week 4 — Advanced AppSec rules (2 new rules: file upload, XXE — DAST now covers 9/11 vulnerabilities)
+🚧 Week 5 — SAST rule pack (in progress)
 
 ## Quick Start
 
@@ -67,17 +71,15 @@ python dast/runner.py --rules rules/dast/ --target http://localhost:8080
 ```
 
 Logs in automatically as the test accounts declared by each rule, runs
-all 9 rules, prints a severity-sorted summary to the terminal, and saves
-full JSON results to `dast/results/`. See
+all 11 rules (as of Week 4), prints a severity-sorted summary to the
+terminal, and saves full JSON results to `dast/results/`. See
 [`docs/dast-engine.md`](docs/dast-engine.md) for how it works and how to
 add new rules.
 
 ## Repository Layout
 
 See [`docs/architecture.md`](docs/architecture.md) for the full breakdown of
-each component and how the pieces fit together. Folders for the demo apps,
-rule engine, and reports will be added as they're built, starting Week 2 —
-this repo intentionally doesn't scaffold empty directories ahead of time.
+each component and how the pieces fit together.
 
 ## Roadmap
 
