@@ -1,0 +1,24 @@
+- id: NB-APPSEC-011
+  name: XML External Entity Injection via XML Parser
+  category: Security Misconfiguration
+  severity: Critical
+  method: POST
+  path: /xml/parse
+  auth: none
+  headers:
+    Content-Type: application/xml
+  body: |
+    <?xml version="1.0"?>
+    <!DOCTYPE root [
+      <!ENTITY xxe SYSTEM "file:///etc/os-release">
+    ]>
+    <root>&xxe;</root>
+  check_type: response_indicator
+  expected_indicator: "PRETTY_NAME"
+  owasp: A05:2021
+  cwe: CWE-611
+  recommendation: >
+    Disable external entity resolution and external DTD loading in the
+    XML parser configuration (e.g. resolve_entities=False in lxml, or
+    use a hardened parser such as defusedxml), instead of trusting
+    entity declarations found in client-supplied XML.

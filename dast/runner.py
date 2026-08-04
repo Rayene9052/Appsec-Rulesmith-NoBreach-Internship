@@ -48,6 +48,20 @@ def run_rule(rule, target, auth_manager):
 
     body = rule.get("body")
 
+    # Week 4: multipart file upload support. A rule sets `multipart: true`
+    # plus file_field/file_name/file_content(/file_content_type) instead
+    # of `body`, so file-upload rules can be expressed declaratively too.
+    files = None
+    if rule.get("multipart"):
+        field_name = rule.get("file_field", "file")
+        file_name = rule.get("file_name", "test.txt")
+        file_content = rule.get("file_content", "test content")
+        file_content_type = rule.get("file_content_type", "application/octet-stream")
+        files = {field_name: (file_name, file_content.encode("utf-8"), file_content_type)}
+        # Let requests set its own multipart Content-Type with boundary.
+        headers.pop("Content-Type", None)
+        body = None
+
     try:
         response = requests.request(
             method=rule["method"],
@@ -55,6 +69,7 @@ def run_rule(rule, target, auth_manager):
             headers=headers,
             json=body if isinstance(body, dict) else None,
             data=body if isinstance(body, str) else None,
+            files=files,
             timeout=5,
         )
     except requests.RequestException as exc:
@@ -92,9 +107,6 @@ def run_rule(rule, target, auth_manager):
     if check_type == "header_absent":
         header_name = rule["expected_indicator"]
         absent = header_name not in response.headers
-        # header_absent rules flag MISSING hardening headers as the
-        # vulnerability, so "passed" (no vulnerability) means the header
-        # IS present.
         evidence = (
             f'Response is missing the "{header_name}" security header.'
             if absent

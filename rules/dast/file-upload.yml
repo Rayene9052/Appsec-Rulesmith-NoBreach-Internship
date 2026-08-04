@@ -1,0 +1,22 @@
+- id: NB-APPSEC-010
+  name: Insecure File Upload Accepts Arbitrary File Type
+  category: Insecure Design
+  severity: High
+  method: POST
+  path: /upload
+  auth: none
+  multipart: true
+  file_field: file
+  file_name: malicious.py
+  file_content: "print('this file type should never be accepted')"
+  file_content_type: text/x-python
+  check_type: response_indicator
+  expected_indicator: "saved_to"
+  owasp: A04:2021
+  cwe: CWE-434
+  recommendation: >
+    Enforce an explicit file extension and content-type allowlist,
+    validate actual file content (magic bytes) rather than trusting the
+    client-supplied filename or Content-Type header, and store uploads
+    outside the web root with randomized, non-attacker-controlled
+    filenames.

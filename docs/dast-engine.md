@@ -1,105 +1,105 @@
-# DAST Engine (Week 3)
+# DAST Engine
 
-The custom dynamic testing engine that automates what was previously done
-by hand with `curl` in Week 2. This document covers the module layout, how
-a scan runs end to end, and how to add a new rule.
+Custom dynamic testing engine that automates what was first done by hand
+with `curl` in Week 2, extended in Week 4 with multipart request support.
 
 ## Module Layout
 
 | File | Responsibility |
 |---|---|
-| `dast/runner.py` | CLI entry point. Orchestrates a full scan run. |
+| `dast/runner.py` | CLI entry point. Orchestrates a full scan run; builds JSON, text, and (as of Week 4) multipart requests. |
 | `dast/rule_engine.py` | Loads and validates `rules/dast/*.yml`. |
 | `dast/auth.py` | Logs in as test accounts (`dast/accounts.yml`), caches tokens per run. |
-| `dast/target_safety.py` | Enforces the local-only target allowlist from `docs/ethical-rules.md`. |
+| `dast/target_safety.py` | Enforces the local-only target allowlist. |
 | `dast/normalizer.py` | Loads `mappings/*.yml`, attaches OWASP/CWE tags, builds the normalized finding. |
 | `dast/evidence_collector.py` | Saves JSON results, prints the terminal summary. |
 | `dast/accounts.yml` | Test account credentials for automatic login. |
 
 ## How a Scan Runs
 
-1. `runner.py` validates the `--target` against the allowlist in
-   `target_safety.py` before doing anything else — a target outside
-   `localhost`/`127.0.0.1`/the Docker Compose service names is refused
-   immediately.
-2. `rule_engine.load_rules()` loads every `*.yml` file in `rules/dast/`
-   and validates each rule's structure (required fields, valid
-   `check_type`, valid `severity`, valid `method`).
-3. For each rule, `runner.run_rule()`:
-   - Resolves auth via `AuthManager.get_token()` if the rule declares
-     `auth: <account_key>`. The first rule that needs a given account
-     triggers a real login; every rule after that reuses the cached
-     token.
-   - Sends the HTTP request the rule describes.
-   - Evaluates the response against the rule's `check_type`.
-4. `normalizer.normalize()` turns the raw pass/fail result into the
-   finding schema from `docs/rule-format.md`, attaching `owasp`,
-   `owasp_api`, and `cwe` straight from the rule (the mapping files in
-   `mappings/` are loaded so the normalizer can validate against them,
-   and future report-generation code can look up category descriptions).
+1. `runner.py` validates `--target` against the allowlist before doing
+   anything else.
+2. `rule_engine.load_rules()` loads and validates every `*.yml` in
+   `rules/dast/`.
+3. For each rule, `runner.run_rule()` resolves auth if needed, builds the
+   request (JSON body, raw text/XML body, or — new in Week 4 — a
+   multipart file upload if the rule sets `multipart: true`), sends it,
+   and evaluates the response against the rule's `check_type`.
+4. `normalizer.normalize()` builds the standard finding, attaching
+   `owasp`, `owasp_api`, `cwe` from the rule.
 5. `evidence_collector.save_results()` writes all findings to
    `dast/results/scan_<timestamp>.json`.
-6. `evidence_collector.print_summary()` prints a severity-sorted, ANSI-free
-   readable summary to the terminal.
+6. `evidence_collector.print_summary()` prints a severity-sorted summary.
 
-## Check Types Implemented
+## Check Types
 
 | check_type | Vulnerable when... |
 |---|---|
 | `response_indicator` | `expected_indicator` string is found in the response body |
-| `status_code` | Response status does **not** match `expected_status` (used for rules where a specific status is the secure/expected outcome) |
-| `header_present` | `expected_indicator` header is **missing** from the response |
-| `header_absent` | `expected_indicator` header is **missing** from the response (used for hardening headers — same direction as above, kept as a distinct name per the schema in `docs/rule-format.md`) |
-| `cookie_flag_missing` | Named cookie is present but missing `expected_flag` (defaults to `Secure`) |
+| `status_code` | Response status does not match `expected_status` |
+| `header_present` | `expected_indicator` header is missing |
+| `header_absent` | `expected_indicator` header is missing (hardening headers) |
+| `cookie_flag_missing` | Named cookie is present but missing `expected_flag` |
 
-## Current Rule Coverage (9 rules, 6 vulnerability classes)
+## Rule Coverage (11 rules, 9 vulnerability classes, as of Week 4)
 
-| Rule ID | Vulnerability | File |
-|---|---|---|
-| NB-APPSEC-001 | IDOR | `rules/dast/access-control.yml` |
-| NB-APPSEC-002 | Broken Access Control | `rules/dast/access-control.yml` |
-| NB-APPSEC-003 | Mass Assignment | `rules/dast/mass-assignment.yml` |
-| NB-APPSEC-004 | SSRF | `rules/dast/ssrf.yml` |
-| NB-APPSEC-005 | NoSQL Injection | `rules/dast/nosql-injection.yml` |
-| NB-APPSEC-006 | SSTI | `rules/dast/ssti.yml` |
-| NB-APPSEC-007 | Missing CSP header | `rules/dast/headers.yml` |
-| NB-APPSEC-008 | Missing HSTS header | `rules/dast/headers.yml` |
-| NB-APPSEC-009 | Missing X-Content-Type-Options header | `rules/dast/headers.yml` |
+| Rule ID | Vulnerability | File | Added |
+|---|---|---|---|
+| NB-APPSEC-001 | IDOR | `rules/dast/access-control.yml` | Week 3 |
+| NB-APPSEC-002 | Broken Access Control | `rules/dast/access-control.yml` | Week 3 |
+| NB-APPSEC-003 | Mass Assignment | `rules/dast/mass-assignment.yml` | Week 3 |
+| NB-APPSEC-004 | SSRF | `rules/dast/ssrf.yml` | Week 3 |
+| NB-APPSEC-005 | NoSQL Injection | `rules/dast/nosql-injection.yml` | Week 3 |
+| NB-APPSEC-006 | SSTI | `rules/dast/ssti.yml` | Week 3 |
+| NB-APPSEC-007 | Missing CSP header | `rules/dast/headers.yml` | Week 3 |
+| NB-APPSEC-008 | Missing HSTS header | `rules/dast/headers.yml` | Week 3 |
+| NB-APPSEC-009 | Missing X-Content-Type-Options header | `rules/dast/headers.yml` | Week 3 |
+| NB-APPSEC-010 | Insecure File Upload | `rules/dast/file-upload.yml` | Week 4 |
+| NB-APPSEC-011 | XXE | `rules/dast/xxe.yml` | Week 4 |
 
-Not yet covered by DAST (SAST-only or deferred to Week 4/5): Insecure JWT
-Handling, Insecure File Upload, XXE, Insecure Deserialization. See
-`docs/vulnerability-list.md` for the full detection-method breakdown.
+Not covered by DAST (SAST-only, Week 5): Insecure JWT Handling, Insecure
+Deserialization.
+
+## Week 4 Addition: Multipart File Upload Rules
+
+The engine previously only sent JSON or raw-text bodies. NB-APPSEC-010
+needed to send an actual `multipart/form-data` file upload, so
+`runner.py` gained support for a new rule shape:
+
+```yaml
+multipart: true
+file_field: file
+file_name: malicious.py
+file_content: "print('this should never be accepted')"
+file_content_type: text/x-python
+```
+
+When `multipart` is set, `body` is ignored and the engine builds the
+request with `requests`' `files=` parameter instead, letting `requests`
+set its own multipart `Content-Type` boundary.
+
+## Week 4 Addition: XXE Rule Design Note
+
+NB-APPSEC-011 targets `/etc/os-release` rather than `/etc/hostname` (used
+in the manual Week 2 test) and checks for the `PRETTY_NAME` key, which is
+a standard field present in virtually every Linux distribution's
+`os-release` file — this makes the rule portable across environments
+(any Debian/Ubuntu/Alpine-based container) instead of depending on an
+unpredictable per-container hostname string.
 
 ## Verified Against a Live Target
 
-This engine was run against the actual `apps/vulnerable-api/` Flask app
-(outside Docker, direct `python app.py`) and correctly flagged 8 of 9
-rules as vulnerable. The 9th (SSRF) correctly reported clean in that test
-because `internal-service` wasn't running — when run against the real
-`docker compose up -d` stack, that rule fires as vulnerable too, matching
-the manual `curl` test from Week 2.
+All 11 rules were tested against a running `apps/vulnerable-api/`
+instance. In an environment without `internal-service` running (i.e.
+outside the full `docker compose` stack), 10 of 11 rules correctly flag
+vulnerable and the SSRF rule correctly reports clean, since its target
+genuinely isn't reachable — this was also true in Week 3 testing and
+confirmed not to be an engine bug. Against the real Docker Compose stack
+(where `internal-service` is reachable), all 11 rules — including SSRF —
+flag as vulnerable, matching every result already proven by hand.
 
-## Adding a New Rule
+## Known Limitations
 
-1. Pick or create a file in `rules/dast/` — group by category, e.g. a new
-   injection rule can go in a new `rules/dast/injection.yml` or alongside
-   an existing category file as a new list item.
-2. Follow the schema in `docs/rule-format.md`. At minimum: `id`, `name`,
-   `category`, `severity`, `method`, `path`, `check_type`, plus whatever
-   `check_type` requires (`expected_indicator` or `expected_status`).
-3. If the rule needs to be authenticated, add `auth: <account_key>` where
-   `<account_key>` is a key in `dast/accounts.yml`.
-4. Run `python dast/runner.py --rules rules/dast/ --target
-   http://localhost:8080` — a malformed rule fails fast with a validation
-   error naming the file and field.
-
-## Known Limitations (Week 1 open items now resolved, new ones noted)
-
-- `expected_status` does not yet support ranges (e.g. `2xx`) — every rule
-  using `status_code` today checks an exact status.
-- Multi-step rules (e.g. "log in, then chain three requests together")
-  are not supported — every rule is a single request/response check.
-  This was flagged as an open question in `docs/rule-format.md` and is
-  still deferred; none of the current 9 rules need it.
-- `cookie_flag_missing` is implemented but not yet used by any rule —
-  no current vulnerability targets a cookie flag directly.
+- `expected_status` does not support ranges (e.g. `2xx`).
+- Multi-step rules (e.g. chained requests) are not supported.
+- `cookie_flag_missing` is implemented but not yet used by any rule.

@@ -56,14 +56,14 @@ improvise around it.
 ## 3. Component Responsibilities
 
 ### 3.1 Vulnerable Demo Applications (`apps/`)
-Local-only Docker services that intentionally implement the eight
+Local-only Docker services that intentionally implement the eleven
 vulnerability classes defined in
 [`docs/vulnerability-list.md`](vulnerability-list.md): IDOR, missing admin
-authorization, SSRF, mass assignment, insecure JWT handling, NoSQL
-injection, insecure file upload, and missing security headers. Each
-vulnerable feature gets a paired secure implementation in
-`apps/secure-api/` from Week 6 onward, so the DAST engine can run the same
-rule against both and prove the fix works.
+authorization, mass assignment, SSRF, insecure JWT handling, NoSQL
+injection, SSTI, insecure file upload, missing security headers, XXE, and
+insecure deserialization. Each vulnerable feature gets a paired secure
+implementation in `apps/secure-api/` from Week 6 onward, so the DAST
+engine can run the same rule against both and prove the fix works.
 
 ### 3.2 DAST Rule Engine (`dast/`)
 - `rule_engine.py` — loads and validates rule files from `rules/dast/*.yml`.
@@ -149,11 +149,12 @@ generator consumes — no new data model.
 | Local filesystem | Runs SAST tools against demo app source |
 | CI (stretch goal, Week 8+) | Optional GitHub Actions run of SAST + DAST on PRs |
 
-## 7. Open Questions for Week 1 Review
 
-- Final backend choice for `apps/vulnerable-api/`: Node/Express vs.
-  Flask/FastAPI (JWT and file-upload libraries differ meaningfully between
-  them — worth deciding before Week 2 starts).
-- Whether the SSRF demo feature is a "URL preview" endpoint or a
-  "webhook/import" endpoint — both are realistic, need to pick one to scope
-  Week 2 work.
+## 7. Progress by Week
+
+| Week | Delivered |
+|---|---|
+| 1 | Architecture, rule format, vulnerability list, OWASP/CWE mapping |
+| 2 | Vulnerable demo app, all 11 vulnerabilities implemented and manually verified |
+| 3 | DAST engine + 9 rules across 7 vulnerabilities, verified against a live target |
+| 4 | Multipart upload support added to the engine; 2 new DAST rules (file upload, XXE), bringing DAST coverage to 9 of 11 vulnerabilities |
