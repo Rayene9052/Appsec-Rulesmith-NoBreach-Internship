@@ -1,8 +1,4 @@
-# Populated incrementally starting Week 2.
-# Expected core dependencies for the DAST engine and SAST tooling:
-# requests
-# pyyaml
-# semgrep
-# bandit
-# pyjwt
-# fastapi / flask (backend choice pending, see docs/architecture.md)
+requests==2.32.3
+pyyaml==6.0.3
+
+semgrep==1.172.0
