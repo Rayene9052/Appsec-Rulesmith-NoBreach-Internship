@@ -1,0 +1,35 @@
+rules:
+  - id: nb-jwt-alg-none-accepted
+    languages: [python]
+    severity: ERROR
+    message: >
+      A JWT algorithms allowlist includes "none", which permits an
+      attacker to forge a token with an empty signature that will still
+      be accepted as valid.
+    metadata:
+      category: cryptographic-failures
+      owasp: A02:2021
+      cwe: CWE-347
+      recommendation: >
+        Pin the accepted algorithm list to only the algorithm(s) the
+        application actually signs with (e.g. ["HS256"]), and never
+        include "none" — the JWT spec's unsigned-token option.
+    pattern: $VAR = [..., "none", ...]
+
+  - id: nb-jwt-hardcoded-secret
+    languages: [python]
+    severity: ERROR
+    message: >
+      A JWT signing secret is hardcoded as a string literal in source
+      code instead of being loaded from an environment variable or
+      secret manager. Anyone with read access to the source (or its
+      version control history) can forge valid tokens.
+    metadata:
+      category: cryptographic-failures
+      owasp: A02:2021
+      cwe: CWE-798
+      recommendation: >
+        Load the signing secret from an environment variable or a
+        secrets manager at runtime, and rotate it if it has ever been
+        committed to version control.
+    pattern-regex: '(?i)(jwt|token)[_A-Z]*SECRET\s*=\s*["\047][^"\047]+["\047]'

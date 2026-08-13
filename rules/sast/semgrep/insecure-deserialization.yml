@@ -1,0 +1,19 @@
+rules:
+  - id: nb-insecure-deserialization-pickle
+    languages: [python]
+    severity: ERROR
+    message: >
+      pickle.loads() is called on data that may come from an untrusted
+      source. Python's pickle format can execute arbitrary code during
+      deserialization (via __reduce__), so calling pickle.loads() on
+      attacker-controlled input allows remote code execution.
+    metadata:
+      category: software-and-data-integrity-failures
+      owasp: A08:2021
+      cwe: CWE-502
+      recommendation: >
+        Never deserialize untrusted data with pickle. Use a safe,
+        data-only format such as JSON instead, or if a binary format is
+        required, use one without arbitrary code execution on load
+        (e.g. protobuf with a fixed schema).
+    pattern: pickle.loads(...)
