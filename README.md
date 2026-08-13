@@ -46,10 +46,15 @@ third-party infrastructure without explicit written authorization. See
 ## Status
 
 ✅ Week 1 — Architecture & Rule Design
+
 ✅ Week 2 — Vulnerable web & API demo application (11 routes implemented, verified)
+
 ✅ Week 3 — Custom DAST rule engine (9 rules across 6 vulnerability classes, verified)
+
 ✅ Week 4 — Advanced AppSec rules (2 new rules: file upload, XXE — DAST now covers 9/11 vulnerabilities)
+
 ✅ Week 5 — SAST rule pack (3 Semgrep rules, insecure JWT handling + insecure deserialization, verified)
+
 🚧 Week 6 — Secure fixes & remediation validation (next up)
 
 ## Quick Start
