@@ -49,7 +49,8 @@ third-party infrastructure without explicit written authorization. See
 ✅ Week 2 — Vulnerable web & API demo application (11 routes implemented, verified)
 ✅ Week 3 — Custom DAST rule engine (9 rules across 6 vulnerability classes, verified)
 ✅ Week 4 — Advanced AppSec rules (2 new rules: file upload, XXE — DAST now covers 9/11 vulnerabilities)
-🚧 Week 5 — SAST rule pack (in progress)
+✅ Week 5 — SAST rule pack (3 Semgrep rules, insecure JWT handling + insecure deserialization, verified)
+🚧 Week 6 — Secure fixes & remediation validation (next up)
 
 ## Quick Start
 
@@ -75,6 +76,18 @@ all 11 rules (as of Week 4), prints a severity-sorted summary to the
 terminal, and saves full JSON results to `dast/results/`. See
 [`docs/dast-engine.md`](docs/dast-engine.md) for how it works and how to
 add new rules.
+
+## Running the SAST Rule Pack
+
+```bash
+python sast/run_semgrep.py --rules rules/sast/semgrep/ --target apps/vulnerable-api/
+```
+
+Runs Semgrep with the project's custom rules, normalizes each match into
+the same finding schema the DAST engine produces, prints a summary, and
+saves full JSON results to `sast/results/`. Covers the two vulnerabilities
+DAST can't reach: insecure JWT handling and insecure deserialization. See
+[`docs/sast-engine.md`](docs/sast-engine.md) for details.
 
 ## Repository Layout
 
