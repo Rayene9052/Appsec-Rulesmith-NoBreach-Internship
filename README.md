@@ -37,12 +37,7 @@ rationale:
 10. XML External Entity Injection (XXE)
 11. Insecure Deserialization
 
-## Scope & Boundaries
 
-This project targets **local demo applications only**. It must never be
-pointed at public applications, client systems, production environments, or
-third-party infrastructure without explicit written authorization. See
-[`docs/ethical-rules.md`](docs/ethical-rules.md) for the full policy.
 
 ## Status
 
