@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AppSec Assessment Report — NoBreach AppSec Rulesmith</title>
+  <style>
+    :root {
+      --red:     #e53e3e;
+      --orange:  #dd6b20;
+      --yellow:  #d69e2e;
+      --green:   #38a169;
+      --blue:    #3182ce;
+      --dark:    #1a202c;
+      --mid:     #2d3748;
+      --light:   #f7fafc;
+      --border:  #e2e8f0;
+      --code-bg: #2d3748;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--light); color: var(--dark); font-size: 14px; line-height: 1.6;
+    }
+    /* Header */
+    header {
+      background: var(--dark); color: #fff; padding: 32px 48px;
+      border-bottom: 4px solid var(--red);
+    }
+    header .brand { font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+      color: #a0aec0; margin-bottom: 8px; }
+    header h1 { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+    header .subtitle { color: #a0aec0; font-size: 13px; }
+    header .meta-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px; margin-top: 24px;
+    }
+    header .meta-item label { display: block; font-size: 10px; text-transform: uppercase;
+      letter-spacing: 1px; color: #718096; margin-bottom: 2px; }
+    header .meta-item span { font-size: 13px; color: #e2e8f0; }
+    /* Layout */
+    main { max-width: 1100px; margin: 0 auto; padding: 40px 32px; }
+    section { margin-bottom: 48px; }
+    h2 { font-size: 20px; font-weight: 700; color: var(--dark);
+      border-bottom: 2px solid var(--border); padding-bottom: 8px; margin-bottom: 20px; }
+    h3 { font-size: 15px; font-weight: 600; color: var(--mid); margin-bottom: 12px; }
+    p { margin-bottom: 12px; }
+    /* Badges */
+    .badge {
+      display: inline-block; padding: 2px 8px; border-radius: 4px;
+      font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .badge-critical { background: #fff5f5; color: var(--red); border: 1px solid #fed7d7; }
+    .badge-high     { background: #fffaf0; color: var(--orange); border: 1px solid #fbd38d; }
+    .badge-medium   { background: #fffff0; color: var(--yellow); border: 1px solid #faf089; }
+    .badge-low      { background: #f0fff4; color: var(--green); border: 1px solid #9ae6b4; }
+    .badge-fixed    { background: #f0fff4; color: var(--green); border: 1px solid #9ae6b4; }
+    .badge-open     { background: #fff5f5; color: var(--red); border: 1px solid #fed7d7; }
+    /* Exec summary cards */
+    .summary-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px;
+      margin-bottom: 24px;
+    }
+    .summary-card {
+      background: #fff; border: 1px solid var(--border); border-radius: 8px;
+      padding: 20px; text-align: center;
+    }
+    .summary-card .count { font-size: 40px; font-weight: 800; line-height: 1; }
+    .summary-card .label { font-size: 12px; text-transform: uppercase; letter-spacing: 1px;
+      color: #718096; margin-top: 4px; }
+    .count-critical { color: var(--red); }
+    .count-high     { color: var(--orange); }
+    .count-medium   { color: var(--yellow); }
+    .count-fixed    { color: var(--green); }
+    /* Tables */
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { background: var(--mid); color: #fff; padding: 10px 12px; text-align: left;
+      font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+    td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    tr:nth-child(even) td { background: #f8fafc; }
+    /* Finding cards */
+    .finding-card {
+      background: #fff; border: 1px solid var(--border); border-radius: 8px;
+      margin-bottom: 24px; overflow: hidden;
+    }
+    .finding-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 14px 20px; background: var(--mid); color: #fff;
+    }
+    .finding-header .rule-id { font-size: 11px; color: #a0aec0; margin-top: 2px; }
+    .finding-header h3 { margin: 0; font-size: 15px; color: #fff; }
+    .finding-meta-row {
+      display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 20px;
+      background: #f8fafc; border-bottom: 1px solid var(--border); font-size: 12px;
+    }
+    .finding-meta-row .meta-pill {
+      background: #fff; border: 1px solid var(--border); border-radius: 4px;
+      padding: 3px 8px; color: #4a5568;
+    }
+    .finding-meta-row .meta-pill strong { color: var(--dark); }
+    .finding-body { padding: 20px; }
+    .finding-body h4 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;
+      color: #718096; margin-bottom: 6px; margin-top: 16px; }
+    .finding-body h4:first-child { margin-top: 0; }
+    pre {
+      background: var(--code-bg); color: #e2e8f0; padding: 14px 16px;
+      border-radius: 6px; font-size: 12px; overflow-x: auto; margin: 8px 0;
+      font-family: "JetBrains Mono", "Fira Code", "Courier New", monospace;
+      white-space: pre-wrap; word-break: break-all;
+    }
+    /* OWASP table colors */
+    .owasp-bar {
+      display: inline-block; height: 8px; background: var(--blue);
+      border-radius: 4px; margin-right: 8px; vertical-align: middle;
+    }
+    /* Recommendations */
+    .rec-list { list-style: none; padding: 0; }
+    .rec-list li {
+      display: flex; gap: 12px; align-items: flex-start;
+      background: #fff; border: 1px solid var(--border); border-radius: 6px;
+      padding: 12px 16px; margin-bottom: 10px;
+    }
+    .rec-list li .rec-num {
+      background: var(--blue); color: #fff; border-radius: 50%;
+      width: 24px; height: 24px; min-width: 24px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; margin-top: 1px;
+    }
+    /* Footer */
+    footer {
+      background: var(--dark); color: #718096; text-align: center;
+      padding: 24px 32px; font-size: 12px; margin-top: 48px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="brand">No Breach Training Hub — NoBreach AppSec Rulesmith</div>
+  <h1>Application Security Assessment Report</h1>
+  <div class="subtitle">Automated DAST + SAST | Controlled Lab Environment</div>
+  <div class="meta-grid">
+    <div class="meta-item"><label>Application</label><span>NoBreach Demo API</span></div>
+    <div class="meta-item"><label>Assessment Date</label><span>2026-08-22</span></div>
+    <div class="meta-item"><label>Assessor</label><span>AppSec Rulesmith Platform</span></div>
+    <div class="meta-item"><label>Report Version</label><span>1.0</span></div>
+    <div class="meta-item"><label>Classification</label><span>Internal — Training Use Only</span></div>
+    <div class="meta-item"><label>Remediation Rate</label><span style="color:#68d391;font-weight:700;">100% (14/14 rules)</span></div>
+  </div>
+</header>
+
+<main>
+
+  <!-- Executive Summary -->
+  <section>
+    <h2>Executive Summary</h2>
+    <div class="summary-grid">
+      <div class="summary-card"><div class="count count-critical">4</div><div class="label">Critical</div></div>
+      <div class="summary-card"><div class="count count-high">5</div><div class="label">High</div></div>
+      <div class="summary-card"><div class="count count-medium">2</div><div class="label">Medium</div></div>
+      <div class="summary-card"><div class="count" style="color:var(--dark)">11</div><div class="label">Total Findings</div></div>
+      <div class="summary-card"><div class="count count-fixed">14</div><div class="label">Rules Fixed</div></div>
+      <div class="summary-card"><div class="count count-fixed">100%</div><div class="label">Remediation Rate</div></div>
+    </div>
+    <p>The NoBreach AppSec Rulesmith platform performed an automated application security
+    assessment of the intentionally vulnerable demo API (<code>apps/vulnerable-api/</code>).
+    The assessment combined dynamic testing (DAST) against a live Docker target and
+    static analysis (SAST) against the Python source code. Eleven distinct vulnerability
+    classes were detected. All were subsequently remediated in <code>apps/secure-api/</code>
+    and validated by re-running the full rule set, achieving a 100% remediation rate.</p>
+  </section>
+
+  <!-- OWASP Coverage -->
+  <section>
+    <h2>OWASP Top 10 Coverage</h2>
+    <table>
+      <thead><tr><th>OWASP Category</th><th>Findings</th><th>Distribution</th></tr></thead>
+      <tbody>
+        <tr><td>A01:2021 Broken Access Control</td><td>3</td><td><span class="owasp-bar" style="width:90px"></span></td></tr>
+        <tr><td>A02:2021 Cryptographic Failures</td><td>1</td><td><span class="owasp-bar" style="width:30px"></span></td></tr>
+        <tr><td>A03:2021 Injection</td><td>2</td><td><span class="owasp-bar" style="width:60px"></span></td></tr>
+        <tr><td>A04:2021 Insecure Design</td><td>1</td><td><span class="owasp-bar" style="width:30px"></span></td></tr>
+        <tr><td>A05:2021 Security Misconfiguration</td><td>2</td><td><span class="owasp-bar" style="width:60px"></span></td></tr>
+        <tr><td>A08:2021 Software and Data Integrity Failures</td><td>1</td><td><span class="owasp-bar" style="width:30px"></span></td></tr>
+        <tr><td>A10:2021 SSRF</td><td>1</td><td><span class="owasp-bar" style="width:30px"></span></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Findings -->
+  <section>
+    <h2>Detailed Findings</h2>
+
+    <!-- Finding 1 -->
+    <div class="finding-card">
+      <div class="finding-header">
+        <div><h3>Broken Object Level Authorization (IDOR)</h3><div class="rule-id">NB-APPSEC-001</div></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="badge badge-high">High</span>
+          <span class="badge badge-fixed">✓ Fixed</span>
+        </div>
+      </div>
+      <div class="finding-meta-row">
+        <span class="meta-pill"><strong>Endpoint:</strong> GET /profile/&lt;user_id&gt;</span>
+        <span class="meta-pill"><strong>Detection:</strong> DAST</span>
+        <span class="meta-pill"><strong>OWASP:</strong> A01:2021</span>
+        <span class="meta-pill"><strong>API:</strong> API1:2023</span>
+        <span class="meta-pill"><strong>CWE:</strong> CWE-639</span>
+      </div>
+      <div class="finding-body">
+        <h4>Description</h4>
+        <p>The profile endpoint authenticated the caller but never verified that the authenticated identity matched the requested user ID. Any authenticated user could retrieve any other user's profile by substituting a different ID.</p>
+        <h4>Evidence</h4>
+        <pre>Request:  GET /profile/2
+          Authorization: Bearer &lt;alice_token&gt;
+Response: 200 OK
+          {"id": 2, "username": "bob", "email": "bob@example.com", "role": "user"}</pre>
+        <h4>Remediation</h4>
+        <pre>if token["user_id"] != user_id and token.get("role") != "admin":
+    return {"error": "forbidden"}, 403</pre>
+      </div>
+    </div>
+
+    <!-- Finding 2 -->
+    <div class="finding-card">
+      <div class="finding-header">
+        <div><h3>Broken Access Control — Missing Admin Authorization</h3><div class="rule-id">NB-APPSEC-002</div></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="badge badge-critical">Critical</span>
+          <span class="badge badge-fixed">✓ Fixed</span>
+        </div>
+      </div>
+      <div class="finding-meta-row">
+        <span class="meta-pill"><strong>Endpoint:</strong> GET /admin/users</span>
+        <span class="meta-pill"><strong>Detection:</strong> DAST</span>
+        <span class="meta-pill"><strong>OWASP:</strong> A01:2021</span>
+        <span class="meta-pill"><strong>API:</strong> API5:2023</span>
+        <span class="meta-pill"><strong>CWE:</strong> CWE-862</span>
+      </div>
+      <div class="finding-body">
+        <h4>Description</h4>
+        <p>The admin user-listing endpoint had no authentication or authorisation check. Any unauthenticated HTTP client received a full dump of all user records.</p>
+        <h4>Evidence</h4>
+        <pre>Request:  GET /admin/users  (no Authorization header)
+Response: 200 OK
+          [{"id":1,"username":"alice","role":"user"}, {"id":2,"username":"bob",...}]</pre>
+        <h4>Remediation</h4>
+        <pre>@app.route("/admin/users")
+@require_auth(roles=["admin"])
+def admin_users():
+    return list_all_users()</pre>
+      </div>
+    </div>
+
+    <!-- Finding 3 -->
+    <div class="finding-card">
+      <div class="finding-header">
+        <div><h3>Mass Assignment</h3><div class="rule-id">NB-APPSEC-003</div></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="badge badge-high">High</span>
+          <span class="badge badge-fixed">✓ Fixed</span>
+        </div>
+      </div>
+      <div class="finding-meta-row">
+        <span class="meta-pill"><strong>Endpoint:</strong> PUT /profile/&lt;user_id&gt;</span>
+        <span class="meta-pill"><strong>Detection:</strong> DAST</span>
+        <span class="meta-pill"><strong>OWASP:</strong> A01:2021</span>
+        <span class="meta-pill"><strong>API:</strong> API3:2023</span>
+        <span class="meta-pill"><strong>CWE:</strong> CWE-915</span>
+      </div>
+      <div class="finding-body">
+        <h4>Description</h4>
+        <p>The profile update endpoint merged the entire request body into the stored user object without filtering. Sending <code>{"role":"admin"}</code> successfully elevated the caller's privileges.</p>
+        <h4>Evidence</h4>
+        <pre>Request:  PUT /profile/1  {"role": "admin"}
+Response: 200 OK  {"id":1,"username":"alice","role":"admin"}  ← role changed</pre>
+        <h4>Remediation</h4>
+        <pre>UPDATABLE_FIELDS = {"email"}
+update = {k: v for k, v in body.items() if k in UPDATABLE_FIELDS}</pre>
+      </div>
+    </div>
+
+    <!-- Finding 4 -->
+    <div class="finding-card">
+      <div class="finding-header">
+        <div><h3>Server-Side Request Forgery (SSRF)</h3><div class="rule-id">NB-APPSEC-004</div></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="badge badge-high">High</span>
+          <span class="badge badge-fixed">✓ Fixed</span>
+        </div>
+      </div>
+      <div class="finding-meta-row">
+        <span class="meta-pill"><strong>Endpoint:</strong> POST /webhook/preview</span>
+        <span class="meta-pill"><strong>Detection:</strong> DAST</span>
+        <span class="meta-pill"><strong>OWASP:</strong> A10:2021</span>
+        <span class="meta-pill"><strong>API:</strong> API7:2023</span>
+        <span class="meta-pill"><strong>CWE:</strong> CWE-918</span>
+      </div>
+      <div class="finding-body">
+        <h4>Description</h4>
+        <p>The webhook preview endpoint fetched any URL supplied by the client with no destination validation, enabling access to Docker-internal services.</p>
+        <h4>Evidence</h4>
+        <pre>Request:  POST /webhook/preview  {"url": "http://internal-service/"}
+Response: 200 OK  {"content": "...httpbin internal response..."}  ← internal data returned</pre>
+        <h4>Remediation</h4>
+        <pre>blocked, reason = _is_blocked_target(url)
+if blocked:
+    return {"error": f"blocked: {reason}"}, 400</pre>
+      </div>
+    </div>
+
+    <!-- Finding 5 -->
+    <div class="finding-card">
+      <div class="finding-header">
+        <div><h3>Insecure JWT Handling</h3><div class="rule-id">nb-jwt-alg-none-accepted · nb-jwt-hardcoded-secret</div></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="badge badge-critical">Critical</span>
+          <span class="badge badge-fixed">✓ Fixed</span>
+        </div>
+      </div>
+      <div class="finding-meta-row">
+        <span class="meta-pill"><strong>Location:</strong> auth_routes.py</span>
+        <span class="meta-pill"><strong>Detection:</strong> SAST</span>
+        <span class="meta-pill"><strong>OWASP:</strong> A02:2021</span>
+        <span class="meta-pill"><strong>API:</strong> API2:2023</span>
+        <span class="meta-pill"><strong>CWE:</strong> CWE-347, CWE-798</span>
+      </div>
+      <div class="finding-body">
+        <h4>Description</h4>
+        <p>Two related issues: (1) <code>algorithms=["HS256","none"]</code> allows forged unsigned tokens. (2) Secret hardcoded as <code>"secret123"</code> in source.</p>
+        <h4>SAST Evidence</h4>
+        <pre>Line 12: SECRET = "secret123"                      ← nb-jwt-hardcoded-secret
+Line 31: jwt.decode(token, SECRET, algorithms=["HS256","none"])  ← nb-jwt-alg-none-accepted</pre>
+        <h4>Remediation</h4>
+        <pre>SECRET = os.environ.get("JWT_SECRET") or secrets.token_hex(32)
+jwt.decode(token, SECRET, algorithms=["HS256"])</pre>
+      </div>
+    </div>
+
+    <!-- Finding 6 -->
+    <div class="finding-card">
+      <div class="finding-header">
+        <div><h3>NoSQL Injection (Simulated)</h3><div class="rule-id">NB-APPSEC-005</div></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="badge badge-high">High</span>
+          <span class="badge badge-fixed">✓ Fixed</span>
+        </div>
+      </div>
+      <div class="finding-meta-row">
+        <span class="meta-pill"><strong>Endpoint:</strong> POST /search</span>
+        <span class="meta-pill"><strong>Detection:</strong> DAST</span>
+        <span class="meta-pill"><strong>OWASP:</strong> A03:2021</span>
+        <span class="meta-pill"><strong>CWE:</strong> CWE-943</span>
+      </div>
+      <div class="finding-body">
+        <h4>Description</h4>
+        <p><code>eval()</code> on user input caused an always-true condition, returning all user records when a crafted injection payload was supplied.</p>
+        <h4>Evidence</h4>
+        <pre>Request:  POST /search  {"username": "x' or True or 'x"}
+Response: 200 OK  [{"id":1,...}, {"id":2,...}]  ← all users returned</pre>
+        <h4>Remediation</h4>
+        <pre>results = [u for u in USERS if u["username"] == username_filter]</pre>
+      </div>
+    </div>
+
+    <!-- Finding 7 -->
+    <div class="finding-card">
+      <div class="finding-header">
+        <div><h3>Server-Side Template Injection (SSTI)</h3><div class="rule-id">NB-APPSEC-006</div></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="badge badge-critical">Critical</span>
+          <span class="badge badge-fixed">✓ Fixed</span>
+        </div>
+      </div>
+      <div class="finding-meta-row">
+        <span class="meta-pill"><strong>Endpoint:</strong> POST /render</span>
+        <span class="meta-pill"><strong>Detection:</strong> DAST</span>
+        <span class="meta-pill"><strong>OWASP:</strong> A03:2021</span>
+        <span class="meta-pill"><strong>CWE:</strong> CWE-1336</span>
+      </div>
+      <div class="finding-body">
+        <h4>Description</h4>
+        <p>User input was embedded in the Jinja2 template source string, allowing template expressions to execute. Escalation to full RCE is possible via standard Jinja2 sandbox escapes.</p>
+        <h4>Evidence</h4>
+        <pre>Request:  POST /render  {"name": "{{7*7}}"}
+Response: 200 OK  {"message": "Hello, 49!"}  ← expression evaluated</pre>
+        <h4>Remediation</h4>
+        <pre>TMPL = Template("Hello, {{ name }}!")  # fixed source
+return TMPL.render(name=name)           # user input as data only</pre>
+      </div>
+    </div>
+
+    <!-- Finding 8 -->
+    <div class="finding-card">
+      <div class="finding-header">
+        <div><h3>Insecure File Upload</h3><div class="rule-id">NB-APPSEC-010</div></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="badge badge-high">High</span>
+          <span class="badge badge-fixed">✓ Fixed</span>
+        </div>
+      </div>
+      <div class="finding-meta-row">
+        <span class="meta-pill"><strong>Endpoint:</strong> POST /upload</span>
+        <span class="meta-pill"><strong>Detection:</strong> DAST</span>
+        <span class="meta-pill"><strong>OWASP:</strong> A04:2021</span>
+        <span class="meta-pill"><strong>CWE:</strong> CWE-434</span>
+      </div>
+      <div class="finding-body">
+        <h4>Description</h4>
+        <p>Any file type accepted; client filename trusted as storage path; no size limit. Web shell upload succeeded without restriction.</p>
+        <h4>Evidence</h4>
+        <pre>Request:  POST /upload  (shell.php, content: &lt;?php system($_GET['cmd']); ?&gt;)
+Response: 200 OK  {"filename": "shell.php", "size": 34}</pre>
+        <h4>Remediation</h4>
+        <pre>ALLOWED = {".jpg", ".jpeg", ".png", ".pdf", ".txt"}
+ext = os.path.splitext(file.filename)[1].lower()
+if ext not in ALLOWED: return {"error": ...}, 400
+safe = f"{uuid.uuid4()}{ext}"</pre>
+      </div>
+    </div>
+
+    <!-- Finding 9 -->
+    <div class="finding-card">
+      <div class="finding-header">
+        <div><h3>Missing Security Headers</h3><div class="rule-id">NB-APPSEC-007 · NB-APPSEC-008 · NB-APPSEC-009</div></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="badge badge-medium">Medium</span>
+          <span class="badge badge-fixed">✓ Fixed</span>
+        </div>
+      </div>
+      <div class="finding-meta-row">
+        <span class="meta-pill"><strong>Scope:</strong> All endpoints</span>
+        <span class="meta-pill"><strong>Detection:</strong> DAST</span>
+        <span class="meta-pill"><strong>OWASP:</strong> A05:2021</span>
+        <span class="meta-pill"><strong>CWE:</strong> CWE-1021, CWE-693</span>
+      </div>
+      <div class="finding-body">
+        <h4>Description</h4>
+        <p>Three browser security headers absent: <code>Content-Security-Policy</code>, <code>Strict-Transport-Security</code>, and <code>X-Content-Type-Options</code>. Removes browser-enforced protection against XSS, SSL stripping, and MIME sniffing.</p>
+        <h4>Remediation</h4>
+        <pre>@app.after_request
+def security_headers(response):
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Content-Security-Policy"] = "default-src 'self'"
+    response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains"
+    return response</pre>
+      </div>
+    </div>
+
+    <!-- Finding 10 -->
+    <div class="finding-card">
+      <div class="finding-header">
+        <div><h3>XML External Entity Injection (XXE)</h3><div class="rule-id">NB-APPSEC-011</div></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="badge badge-high">High</span>
+          <span class="badge badge-fixed">✓ Fixed</span>
+        </div>
+      </div>
+      <div class="finding-meta-row">
+        <span class="meta-pill"><strong>Endpoint:</strong> POST /xml/parse</span>
+        <span class="meta-pill"><strong>Detection:</strong> DAST</span>
+        <span class="meta-pill"><strong>OWASP:</strong> A05:2021</span>
+        <span class="meta-pill"><strong>CWE:</strong> CWE-611</span>
+      </div>
+      <div class="finding-body">
+        <h4>Description</h4>
+        <p>lxml XMLParser configured with <code>resolve_entities=True</code>. External entity declaration referencing <code>file:///etc/os-release</code> caused local file contents to appear in the response.</p>
+        <h4>Evidence</h4>
+        <pre>Request body: &lt;!ENTITY xxe SYSTEM "file:///etc/os-release"&gt; ... &amp;xxe;
+Response:     {"parsed_text": "NAME=\"Debian GNU/Linux\"..."}  ← file read</pre>
+        <h4>Remediation</h4>
+        <pre>parser = etree.XMLParser(resolve_entities=False)</pre>
+      </div>
+    </div>
+
+    <!-- Finding 11 -->
+    <div class="finding-card">
+      <div class="finding-header">
+        <div><h3>Insecure Deserialization</h3><div class="rule-id">nb-insecure-deserialization-pickle</div></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="badge badge-critical">Critical</span>
+          <span class="badge badge-fixed">✓ Fixed</span>
+        </div>
+      </div>
+      <div class="finding-meta-row">
+        <span class="meta-pill"><strong>Location:</strong> import_routes.py</span>
+        <span class="meta-pill"><strong>Detection:</strong> SAST</span>
+        <span class="meta-pill"><strong>OWASP:</strong> A08:2021</span>
+        <span class="meta-pill"><strong>CWE:</strong> CWE-502</span>
+      </div>
+      <div class="finding-body">
+        <h4>Description</h4>
+        <p><code>pickle.loads()</code> called on a client-supplied base64 blob. Python pickle executes arbitrary code during deserialization — a crafted payload achieves reliable RCE.</p>
+        <h4>SAST Evidence</h4>
+        <pre>import_routes.py:18  obj = pickle.loads(base64.b64decode(body["data"]))</pre>
+        <h4>Remediation</h4>
+        <pre>obj = json.loads(body["data"])  # data-only format; no code execution</pre>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- Summary Table -->
+  <section>
+    <h2>Remediation Summary</h2>
+    <table>
+      <thead><tr><th>#</th><th>Finding</th><th>Severity</th><th>Rule(s)</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>IDOR</td><td><span class="badge badge-high">High</span></td><td>NB-APPSEC-001</td><td><span class="badge badge-fixed">✓ Fixed</span></td></tr>
+        <tr><td>2</td><td>Missing Admin AuthZ</td><td><span class="badge badge-critical">Critical</span></td><td>NB-APPSEC-002</td><td><span class="badge badge-fixed">✓ Fixed</span></td></tr>
+        <tr><td>3</td><td>Mass Assignment</td><td><span class="badge badge-high">High</span></td><td>NB-APPSEC-003</td><td><span class="badge badge-fixed">✓ Fixed</span></td></tr>
+        <tr><td>4</td><td>SSRF</td><td><span class="badge badge-high">High</span></td><td>NB-APPSEC-004</td><td><span class="badge badge-fixed">✓ Fixed</span></td></tr>
+        <tr><td>5</td><td>Insecure JWT</td><td><span class="badge badge-critical">Critical</span></td><td>nb-jwt-* (×2)</td><td><span class="badge badge-fixed">✓ Fixed</span></td></tr>
+        <tr><td>6</td><td>NoSQL Injection</td><td><span class="badge badge-high">High</span></td><td>NB-APPSEC-005</td><td><span class="badge badge-fixed">✓ Fixed</span></td></tr>
+        <tr><td>7</td><td>SSTI</td><td><span class="badge badge-critical">Critical</span></td><td>NB-APPSEC-006</td><td><span class="badge badge-fixed">✓ Fixed</span></td></tr>
+        <tr><td>8</td><td>Insecure File Upload</td><td><span class="badge badge-high">High</span></td><td>NB-APPSEC-010</td><td><span class="badge badge-fixed">✓ Fixed</span></td></tr>
+        <tr><td>9</td><td>Missing Headers</td><td><span class="badge badge-medium">Medium</span></td><td>NB-APPSEC-007/008/009</td><td><span class="badge badge-fixed">✓ Fixed</span></td></tr>
+        <tr><td>10</td><td>XXE</td><td><span class="badge badge-high">High</span></td><td>NB-APPSEC-011</td><td><span class="badge badge-fixed">✓ Fixed</span></td></tr>
+        <tr><td>11</td><td>Insecure Deserialization</td><td><span class="badge badge-critical">Critical</span></td><td>nb-insecure-deserialization-pickle</td><td><span class="badge badge-fixed">✓ Fixed</span></td></tr>
+      </tbody>
+    </table>
+    <p style="margin-top:16px;padding:12px 16px;background:#f0fff4;border:1px solid #9ae6b4;border-radius:6px;color:#276749;">
+      <strong>Automated validation result:</strong> 14 / 14 rules confirmed fixed.
+      Remediation rate: <strong>100%</strong>.
+      Evidence: <code>remediation/reports/remediation_report_20260822T112239Z.json</code>
+    </p>
+  </section>
+
+  <!-- Recommendations -->
+  <section>
+    <h2>Recommendations</h2>
+    <h3>Immediate (pre-production)</h3>
+    <ul class="rec-list">
+      <li><span class="rec-num">1</span><span>Implement <code>require_auth()</code> as a blueprint-level decorator. No route should be less protected than the sensitivity of the data it returns.</span></li>
+      <li><span class="rec-num">2</span><span>Inject JWT secrets via environment variable in every deployment. Rotate any secrets ever committed to version control.</span></li>
+      <li><span class="rec-num">3</span><span>Audit the entire codebase for <code>pickle.loads()</code> and <code>eval()</code> on untrusted data and replace before any external exposure.</span></li>
+      <li><span class="rec-num">4</span><span>Audit every <code>Template()</code> call to confirm no user input reaches the template source string.</span></li>
+    </ul>
+    <h3 style="margin-top:20px">Short-term (next sprint)</h3>
+    <ul class="rec-list">
+      <li><span class="rec-num">5</span><span>Add the <code>@app.after_request</code> security headers hook to all Flask applications as a standard baseline.</span></li>
+      <li><span class="rec-num">6</span><span>Enforce extension allowlist, UUID rename, and size cap on every file upload endpoint.</span></li>
+      <li><span class="rec-num">7</span><span>Standardise on <code>defusedxml</code> for all XML processing across the codebase.</span></li>
+      <li><span class="rec-num">8</span><span>Add a shared <code>validate_url()</code> utility for all outbound request code so SSRF protection is consistent.</span></li>
+    </ul>
+    <h3 style="margin-top:20px">Ongoing</h3>
+    <ul class="rec-list">
+      <li><span class="rec-num">9</span><span>Run NoBreach AppSec Rulesmith DAST and SAST rules in CI on every pull request to catch regressions.</span></li>
+      <li><span class="rec-num">10</span><span>Integrate <code>pip-audit</code> for dependency vulnerability scanning in CI.</span></li>
+      <li><span class="rec-num">11</span><span>Review <code>knowledge_base/secure-coding-checklist.md</code> before every deployment.</span></li>
+    </ul>
+  </section>
+
+</main>
+
+<footer>
+  NoBreach AppSec Rulesmith — No Breach Training Hub |
+  This report was generated for training and demonstration purposes only.
+  All testing was performed in a controlled local Docker Compose environment.
+  No external, client, or production systems were tested.
+</footer>
+
+</body>
+</html>

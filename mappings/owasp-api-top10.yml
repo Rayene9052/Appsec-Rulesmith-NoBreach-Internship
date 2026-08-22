@@ -1,12 +1,69 @@
-# OWASP API Security Top 10 (2023) — mapping used by the normalizer.
-# Draft for Week 1.
+# OWASP API Security Top 10 (2023) — NoBreach AppSec Rulesmith mapping.
+# Extended in Week 7 with descriptions and platform findings.
 
 API1:2023:
   name: Broken Object Level Authorization
-  applies_to:
-    - Broken Object Level Authorization (IDOR)
+  description: >
+    APIs expose endpoints that handle object identifiers, creating a wide
+    attack surface for object level access control issues. Object level
+    authorization checks should be considered in every function that accesses
+    a data source using an ID from the user.
+  risk: Critical
+  platform_findings:
+    - Broken Object Level Authorization (IDOR) — KB-001 / NB-APPSEC-001
+
+API2:2023:
+  name: Broken Authentication
+  description: >
+    Authentication mechanisms are often implemented incorrectly, allowing
+    attackers to compromise authentication tokens or exploit implementation
+    flaws to assume other users' identities temporarily or permanently.
+  risk: Critical
+  platform_findings:
+    - Insecure JWT Handling — KB-005 / nb-jwt-alg-none-accepted, nb-jwt-hardcoded-secret
 
 API3:2023:
   name: Broken Object Property Level Authorization
-  applies_to:
-    - Mass Assignment
+  description: >
+    This category combines Excessive Data Exposure and Mass Assignment. Attackers
+    can read or write object properties they should not be allowed to access —
+    either because the API exposes all object properties in responses, or because
+    it accepts all properties in requests without filtering.
+  risk: High
+  platform_findings:
+    - Mass Assignment — KB-003 / NB-APPSEC-003
+
+API5:2023:
+  name: Broken Function Level Authorization
+  description: >
+    Complex access control policies with different hierarchies, groups, and roles,
+    combined with unclear separation between administrative and regular functions,
+    tend to lead to authorization flaws. Administrative endpoints are often
+    exposed without proper protection.
+  risk: Critical
+  platform_findings:
+    - Broken Access Control (missing admin authorization) — KB-002 / NB-APPSEC-002
+
+API7:2023:
+  name: Server Side Request Forgery
+  description: >
+    SSRF flaws occur when an API fetches a remote resource based on a
+    user-supplied URL without validating the destination. This allows attackers
+    to make the application send requests to unexpected destinations, potentially
+    bypassing firewall or VPN protection.
+  risk: High
+  platform_findings:
+    - Server-Side Request Forgery — KB-004 / NB-APPSEC-004
+
+API8:2023:
+  name: Security Misconfiguration
+  description: >
+    APIs are often misconfigured at any layer of the application stack. Not only
+    that, but unnecessary HTTP methods may be enabled, CORS may be overly
+    permissive, verbose error messages may be exposed, and security headers
+    may be absent.
+  risk: Medium
+  platform_findings:
+    - Missing / Misconfigured Security Headers — KB-009 / NB-APPSEC-007/008/009
+    - XML External Entity Injection (XXE) — KB-010 / NB-APPSEC-011
+    - Insecure Deserialization — KB-011 / nb-insecure-deserialization-pickle

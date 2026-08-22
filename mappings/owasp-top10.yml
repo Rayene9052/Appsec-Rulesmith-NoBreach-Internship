@@ -1,42 +1,83 @@
-# OWASP Top 10 (2021) — mapping used by the normalizer.
-# Draft for Week 1. Extend recommendation/description fields as knowledge
-# base entries are written in Week 7.
+# OWASP Top 10 (2021) — NoBreach AppSec Rulesmith mapping.
+# Extended in Week 7 with description, risk, and platform findings.
+# Used by the normalizer and the sample AppSec report generator.
 
 A01:2021:
   name: Broken Access Control
-  applies_to:
-    - Broken Object Level Authorization (IDOR)
-    - Broken Access Control (missing admin authorization)
-    - Mass Assignment (Broken Object Property Level Authorization)
+  description: >
+    Restrictions on what authenticated users can do are not properly enforced.
+    Attackers can exploit this to access unauthorised functionality or data,
+    such as accessing other users' accounts, viewing sensitive files, or
+    acting as a privileged user.
+  risk: Critical
+  platform_findings:
+    - Broken Object Level Authorization (IDOR) — KB-001 / NB-APPSEC-001
+    - Broken Access Control (missing admin authorization) — KB-002 / NB-APPSEC-002
+    - Mass Assignment — KB-003 / NB-APPSEC-003
 
 A02:2021:
   name: Cryptographic Failures
-  applies_to:
-    - Insecure JWT Handling
+  description: >
+    Failures related to cryptography (or lack thereof) that often lead to
+    sensitive data exposure or system compromise. Includes weak algorithms,
+    hardcoded secrets, improper certificate validation, and insecure JWT handling.
+  risk: Critical
+  platform_findings:
+    - Insecure JWT Handling — KB-005 / nb-jwt-alg-none-accepted, nb-jwt-hardcoded-secret
 
 A03:2021:
   name: Injection
-  applies_to:
-    - NoSQL Injection
-    - Server-Side Template Injection (SSTI)
+  description: >
+    User-supplied data is not validated, filtered, or sanitised before being
+    sent to an interpreter. Includes SQL, NoSQL, OS, LDAP injection, and
+    server-side template injection. An attacker can use injection to read,
+    modify, or delete data, or to execute arbitrary code.
+  risk: Critical
+  platform_findings:
+    - NoSQL Injection — KB-006 / NB-APPSEC-005
+    - Server-Side Template Injection (SSTI) — KB-007 / NB-APPSEC-006
 
 A04:2021:
   name: Insecure Design
-  applies_to:
-    - Insecure File Upload
+  description: >
+    Missing or ineffective control design. Insecure design differs from
+    insecure implementation — the design itself lacks the controls needed
+    to defend against specific attack classes, such as unrestricted file
+    upload with no type or size constraints.
+  risk: High
+  platform_findings:
+    - Insecure File Upload — KB-008 / NB-APPSEC-010
 
 A05:2021:
   name: Security Misconfiguration
-  applies_to:
-    - Missing / Misconfigured Security Headers
-    - XML External Entity (XXE) Injection
+  description: >
+    Missing appropriate security hardening across the application stack.
+    Includes unnecessary features enabled, default accounts active, verbose
+    error messages, missing security headers, and insecure XML parser
+    configuration.
+  risk: High
+  platform_findings:
+    - Missing / Misconfigured Security Headers — KB-009 / NB-APPSEC-007, NB-APPSEC-008, NB-APPSEC-009
+    - XML External Entity Injection (XXE) — KB-010 / NB-APPSEC-011
 
 A08:2021:
   name: Software and Data Integrity Failures
-  applies_to:
-    - Insecure Deserialization
+  description: >
+    Code and infrastructure that does not protect against integrity violations.
+    Includes insecure deserialization, using components from untrusted sources
+    without integrity verification, and auto-update functionality without
+    signature checking.
+  risk: High
+  platform_findings:
+    - Insecure Deserialization — KB-011 / nb-insecure-deserialization-pickle
 
 A10:2021:
   name: Server-Side Request Forgery (SSRF)
-  applies_to:
-    - Server-Side Request Forgery
+  description: >
+    SSRF flaws occur when a web application fetches a remote resource without
+    validating the user-supplied URL. An attacker can coerce the server to
+    send requests to internal services, cloud metadata endpoints, or other
+    unintended destinations — even when protected by a firewall or VPN.
+  risk: High
+  platform_findings:
+    - Server-Side Request Forgery — KB-004 / NB-APPSEC-004

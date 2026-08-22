@@ -1,56 +1,146 @@
-# CWE mapping — draft, to be filled in fully per-rule as DAST/SAST rules
-# are written (Weeks 3-5). Listed here so the normalizer schema has a real
-# file to load starting Week 1.
+# CWE (Common Weakness Enumeration) mapping — NoBreach AppSec Rulesmith.
+# Extended in Week 7 with descriptions, platform findings, and CVSS base info.
 
 CWE-639:
   name: Authorization Bypass Through User-Controlled Key
-  applies_to:
-    - Broken Object Level Authorization (IDOR)
+  description: >
+    The system's authorization functionality does not prevent one user from
+    gaining access to another user's data or record by modifying the key value
+    identifying the data.
+  cvss_base_score: 8.1
+  cvss_vector: AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N
+  platform_findings:
+    - Broken Object Level Authorization (IDOR) — KB-001
 
 CWE-862:
   name: Missing Authorization
-  applies_to:
-    - Broken Access Control (missing admin authorization)
-
-CWE-918:
-  name: Server-Side Request Forgery (SSRF)
-  applies_to:
-    - Server-Side Request Forgery
+  description: >
+    The software does not perform an authorization check when an actor attempts
+    to access a resource or perform an action.
+  cvss_base_score: 9.1
+  cvss_vector: AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N
+  platform_findings:
+    - Broken Access Control (missing admin authorization) — KB-002
 
 CWE-915:
   name: Improperly Controlled Modification of Dynamically-Determined Object Attributes
-  applies_to:
-    - Mass Assignment
+  description: >
+    The software receives input from an upstream component that specifies
+    multiple attributes, properties, or fields that are to be initialized or
+    updated in an object, but it does not properly control which attributes
+    can be modified.
+  cvss_base_score: 8.1
+  cvss_vector: AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N
+  platform_findings:
+    - Mass Assignment — KB-003
+
+CWE-918:
+  name: Server-Side Request Forgery (SSRF)
+  description: >
+    The web server receives a URL or similar request from an upstream component
+    and retrieves the contents of this URL, but it does not sufficiently ensure
+    that the request is being sent to the expected destination.
+  cvss_base_score: 8.6
+  cvss_vector: AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:N/A:N
+  platform_findings:
+    - Server-Side Request Forgery — KB-004
 
 CWE-347:
   name: Improper Verification of Cryptographic Signature
-  applies_to:
-    - Insecure JWT Handling
+  description: >
+    The software does not verify, or incorrectly verifies, the cryptographic
+    signature for data.
+  cvss_base_score: 9.8
+  cvss_vector: AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+  platform_findings:
+    - Insecure JWT Handling (alg:none) — KB-005
+
+CWE-798:
+  name: Use of Hard-coded Credentials
+  description: >
+    The software contains hard-coded credentials, such as a password or
+    cryptographic key, that it uses for its own inbound authentication,
+    outbound communication to external components, or encryption of internal data.
+  cvss_base_score: 9.8
+  cvss_vector: AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+  platform_findings:
+    - Insecure JWT Handling (hardcoded secret) — KB-005
 
 CWE-943:
   name: Improper Neutralization of Special Elements in Data Query Logic
-  applies_to:
-    - NoSQL Injection
-
-CWE-434:
-  name: Unrestricted Upload of File with Dangerous Type
-  applies_to:
-    - Insecure File Upload
-
-CWE-1021:
-  name: Improper Restriction of Rendered UI Layers or Frames / missing hardening headers
-  applies_to:
-    - Missing / Misconfigured Security Headers
-CWE-611:
-  name: Improper Restriction of XML External Entity Reference
-  applies_to:
-    - XML External Entity (XXE) Injection
+  description: >
+    The application uses user-controlled inputs to construct queries in a query
+    language, but does not properly neutralize or incorrectly neutralizes special
+    elements that can modify the query logic or inject additional queries.
+  cvss_base_score: 9.8
+  cvss_vector: AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+  platform_findings:
+    - NoSQL Injection — KB-006
 
 CWE-1336:
   name: Improper Neutralization of Special Elements Used in a Template Engine
-  applies_to:
-    - Server-Side Template Injection (SSTI)
+  description: >
+    The application uses a template engine to insert or process externally-
+    influenced input within the template, but it does not neutralize or
+    incorrectly neutralizes special elements or syntax that can be interpreted
+    as template directives when processed.
+  cvss_base_score: 9.8
+  cvss_vector: AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+  platform_findings:
+    - Server-Side Template Injection (SSTI) — KB-007
+
+CWE-434:
+  name: Unrestricted Upload of File with Dangerous Type
+  description: >
+    The software allows the attacker to upload or transfer files of dangerous
+    types that can be automatically processed within the product's environment.
+  cvss_base_score: 8.8
+  cvss_vector: AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H
+  platform_findings:
+    - Insecure File Upload — KB-008
+
+CWE-1021:
+  name: Improper Restriction of Rendered UI Layers or Frames
+  description: >
+    The web application does not restrict or incorrectly restricts frame objects
+    or UI layers that belong to another application or domain, which can lead
+    to user confusion about which interface the user is interacting with.
+    Also used broadly for missing browser security headers.
+  cvss_base_score: 4.7
+  cvss_vector: AV:N/AC:L/PR:N/UI:R/S:C/C:N/I:L/A:N
+  platform_findings:
+    - Missing / Misconfigured Security Headers — KB-009
+
+CWE-693:
+  name: Protection Mechanism Failure
+  description: >
+    The product does not use or incorrectly uses a protection mechanism that
+    provides sufficient defence against directed attacks against the product.
+    Covers absent security headers including CSP and HSTS.
+  cvss_base_score: 5.4
+  cvss_vector: AV:N/AC:L/PR:N/UI:R/S:U/C:L/I:L/A:N
+  platform_findings:
+    - Missing Content-Security-Policy — KB-009
+    - Missing Strict-Transport-Security — KB-009
+
+CWE-611:
+  name: Improper Restriction of XML External Entity Reference
+  description: >
+    The software processes an XML document that can contain XML entities with
+    URIs that resolve to documents outside of the intended sphere of control,
+    causing the product to embed incorrect documents into its output.
+  cvss_base_score: 9.1
+  cvss_vector: AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:H
+  platform_findings:
+    - XML External Entity Injection (XXE) — KB-010
+
 CWE-502:
   name: Deserialization of Untrusted Data
-  applies_to:
-    - Insecure Deserialization
+  description: >
+    The application deserializes untrusted data without sufficiently verifying
+    that the resulting data will be valid. Deserialization of certain formats
+    (such as Python pickle) can lead to arbitrary code execution.
+  cvss_base_score: 9.8
+  cvss_vector: AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+  platform_findings:
+    - Insecure Deserialization — KB-011
