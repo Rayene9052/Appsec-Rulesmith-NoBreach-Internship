@@ -158,3 +158,5 @@ generator consumes — no new data model.
 | 2 | Vulnerable demo app, all 11 vulnerabilities implemented and manually verified |
 | 3 | DAST engine + 9 rules across 7 vulnerabilities, verified against a live target |
 | 4 | Multipart upload support added to the engine; 2 new DAST rules (file upload, XXE), bringing DAST coverage to 9 of 11 vulnerabilities |
+| 5 | SAST rule pack (Semgrep): 3 rules covering insecure JWT handling and insecure deserialization, each verified against both vulnerable and secure code. All 11 vulnerabilities now have at least one automated rule |
+| 6 | Secure fixes in `apps/secure-api/` for all 11 vulnerabilities; remediation validation script (`remediation/validate.py`) re-runs all 14 rules against both APIs and confirms 100% remediation rate; `docs/secure-fixes.md` documents each fix |
