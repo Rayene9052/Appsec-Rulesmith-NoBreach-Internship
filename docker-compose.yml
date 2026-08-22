@@ -9,6 +9,21 @@ services:
     depends_on:
       - internal-service
 
+  # Week 6: secure counterpart to vulnerable-api, same routes/seed data,
+  # exposed on a different host port so both can run and be compared
+  # side by side. Also on nobreach-internal so its SSRF fix can be
+  # verified to correctly BLOCK reaching internal-service (unlike
+  # vulnerable-api, which can reach it).
+  secure-api:
+    build: ./apps/secure-api
+    container_name: nobreach-secure-api
+    ports:
+      - "8081:8080"
+    networks:
+      - nobreach-internal
+    depends_on:
+      - internal-service
+
   internal-service:
     image: kennethreitz/httpbin
     container_name: nobreach-internal-service

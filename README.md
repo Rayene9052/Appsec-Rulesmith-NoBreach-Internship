@@ -55,7 +55,9 @@ third-party infrastructure without explicit written authorization. See
 
 ✅ Week 5 — SAST rule pack (3 Semgrep rules, insecure JWT handling + insecure deserialization, verified)
 
-🚧 Week 6 — Secure fixes & remediation validation (next up)
+✅ Week 6 — Secure fixes & remediation validation (all 11 vulnerabilities fixed in apps/secure-api/, 100% remediation rate confirmed)
+
+🚧 Week 7 — Knowledge base, checklist, sample report (next up)
 
 ## Quick Start
 
@@ -93,6 +95,18 @@ the same finding schema the DAST engine produces, prints a summary, and
 saves full JSON results to `sast/results/`. Covers the two vulnerabilities
 DAST can't reach: insecure JWT handling and insecure deserialization. See
 [`docs/sast-engine.md`](docs/sast-engine.md) for details.
+
+## Running the Remediation Validator
+
+```bash
+python remediation/validate.py
+```
+
+Requires both `vulnerable-api` (port 8080) and `secure-api` (port 8081)
+to be running. Re-runs every DAST and SAST rule against both, compares
+results per rule, and reports which vulnerabilities are fixed, still
+open, or regressed. See [`docs/secure-fixes.md`](docs/secure-fixes.md)
+for what each fix does and why.
 
 ## Repository Layout
 
