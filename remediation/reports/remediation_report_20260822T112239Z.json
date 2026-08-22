@@ -1,0 +1,107 @@
+{
+  "dast": [
+    {
+      "rule_id": "NB-APPSEC-001",
+      "title": "Broken Object Level Authorization on Profile Endpoint (IDOR)",
+      "vulnerable_target_result": "vulnerable",
+      "secure_target_result": "clean",
+      "status": "fixed"
+    },
+    {
+      "rule_id": "NB-APPSEC-002",
+      "title": "Broken Access Control on Admin Endpoint",
+      "vulnerable_target_result": "vulnerable",
+      "secure_target_result": "clean",
+      "status": "fixed"
+    },
+    {
+      "rule_id": "NB-APPSEC-003",
+      "title": "Mass Assignment via Profile Update",
+      "vulnerable_target_result": "vulnerable",
+      "secure_target_result": "clean",
+      "status": "fixed"
+    },
+    {
+      "rule_id": "NB-APPSEC-004",
+      "title": "Server-Side Request Forgery via Webhook Preview",
+      "vulnerable_target_result": "vulnerable",
+      "secure_target_result": "clean",
+      "status": "fixed"
+    },
+    {
+      "rule_id": "NB-APPSEC-005",
+      "title": "NoSQL Injection via Search Filter",
+      "vulnerable_target_result": "vulnerable",
+      "secure_target_result": "clean",
+      "status": "fixed"
+    },
+    {
+      "rule_id": "NB-APPSEC-006",
+      "title": "Server-Side Template Injection via Render Endpoint",
+      "vulnerable_target_result": "vulnerable",
+      "secure_target_result": "clean",
+      "status": "fixed"
+    },
+    {
+      "rule_id": "NB-APPSEC-007",
+      "title": "Missing Content-Security-Policy Header",
+      "vulnerable_target_result": "vulnerable",
+      "secure_target_result": "clean",
+      "status": "fixed"
+    },
+    {
+      "rule_id": "NB-APPSEC-008",
+      "title": "Missing Strict-Transport-Security Header",
+      "vulnerable_target_result": "vulnerable",
+      "secure_target_result": "clean",
+      "status": "fixed"
+    },
+    {
+      "rule_id": "NB-APPSEC-009",
+      "title": "Missing X-Content-Type-Options Header",
+      "vulnerable_target_result": "vulnerable",
+      "secure_target_result": "clean",
+      "status": "fixed"
+    },
+    {
+      "rule_id": "NB-APPSEC-010",
+      "title": "Insecure File Upload Accepts Arbitrary File Type",
+      "vulnerable_target_result": "vulnerable",
+      "secure_target_result": "clean",
+      "status": "fixed"
+    },
+    {
+      "rule_id": "NB-APPSEC-011",
+      "title": "XML External Entity Injection via XML Parser",
+      "vulnerable_target_result": "vulnerable",
+      "secure_target_result": "clean",
+      "status": "fixed"
+    }
+  ],
+  "sast": [
+    {
+      "rule_id": "nb-insecure-deserialization-pickle",
+      "vulnerable_target_locations": [
+        "C:\\Users\\MSI\\Desktop\\nobreach-appsec-rulesmith\\apps\\vulnerable-api\\import_routes.py:26"
+      ],
+      "secure_target_locations": [],
+      "status": "fixed"
+    },
+    {
+      "rule_id": "nb-jwt-alg-none-accepted",
+      "vulnerable_target_locations": [
+        "C:\\Users\\MSI\\Desktop\\nobreach-appsec-rulesmith\\apps\\vulnerable-api\\auth_routes.py:14"
+      ],
+      "secure_target_locations": [],
+      "status": "fixed"
+    },
+    {
+      "rule_id": "nb-jwt-hardcoded-secret",
+      "vulnerable_target_locations": [
+        "C:\\Users\\MSI\\Desktop\\nobreach-appsec-rulesmith\\apps\\vulnerable-api\\auth_routes.py:10"
+      ],
+      "secure_target_locations": [],
+      "status": "fixed"
+    }
+  ]
+}

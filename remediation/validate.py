@@ -42,28 +42,30 @@ def run_dast(target, label):
         encoding="utf-8",
         errors="replace",
     )
-    result_path = os.path.join(DAST_RESULTS_DIR, f"scan_{label}.json")
+    result_path = os.path.join(DAST_RESULTS_DIR, f"scan_{label}.json")  # DAST dir, no sast_ prefix
     with open(result_path, "r") as f:
         return json.load(f)
 
 
 def run_sast(target_path, label):
-    subprocess.run(
+    result = subprocess.run(
         [sys.executable, os.path.join(REPO_ROOT, "sast", "run_semgrep.py"),
          "--rules", os.path.join(REPO_ROOT, "rules", "sast", "semgrep"),
          "--target", target_path,
          "--run-label", label],
-        check=True,
         capture_output=True,
         text=True,
         encoding="utf-8",
         errors="replace",
     )
-    result_path = os.path.join(SAST_RESULTS_DIR, f"sast_scan_{label}.json")
+    if result.returncode not in (0, 1):
+        raise RuntimeError(
+            f"SAST scan failed (exit {result.returncode}):\n{result.stderr}"
+        )
+    result_path = os.path.join(SAST_RESULTS_DIR, f"sast_scan_{label}.json")  # SAST dir, sast_ prefix
     with open(result_path, "r") as f:
         return json.load(f)
-
-
+    
 def compare_dast(vulnerable_findings, secure_findings):
     """
     DAST findings are a flat list where every rule that ran produces one
