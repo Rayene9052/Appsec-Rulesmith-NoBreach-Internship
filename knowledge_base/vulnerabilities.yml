@@ -1,0 +1,676 @@
+# NoBreach AppSec Rulesmith — Vulnerability Knowledge Base
+# Week 7 deliverable: one entry per vulnerability implemented in the platform.
+# Each entry is self-contained: description, impact, detection, remediation,
+# OWASP/CWE mapping, references.
+#
+# Rule IDs mirror the DAST/SAST rule libraries so entries can be cross-linked.
+
+---
+
+- id: KB-001
+  rule_ref: NB-APPSEC-001
+  name: Broken Object Level Authorization (IDOR)
+  category: Access Control
+  affected_technology: REST API, any backend with user-scoped resources
+  owasp_top10: A01:2021 — Broken Access Control
+  owasp_api: API1:2023 — Broken Object Level Authorization
+  cwe: CWE-639 — Authorization Bypass Through User-Controlled Key
+  severity: High
+
+  description: >
+    The API exposes individual resource endpoints (e.g. /profile/<user_id>)
+    where the resource identifier is supplied by the client. When the server
+    authenticates the requester but does not verify that the authenticated
+    identity is authorised to access the requested object, any authenticated
+    user can read or modify any other user's data by substituting a different
+    identifier in the request.
+
+  business_impact: >
+    Attackers can enumerate and exfiltrate all user records, personally
+    identifiable information (PII), credentials, payment data, or any other
+    user-scoped resources. This constitutes a data breach and typically
+    triggers regulatory notification obligations (GDPR, CCPA, etc.).
+
+  technical_impact: >
+    Complete loss of confidentiality for all objects exposed by the affected
+    endpoint. If the endpoint also allows writes, loss of integrity across all
+    user records.
+
+  detection_logic: >
+    DAST: Authenticate as user A, capture the token. Request the profile
+    endpoint substituting user B's ID. A 200 response containing B's data
+    confirms the vulnerability. NB-APPSEC-001 checks for a 200 response and
+    the presence of a different user's username in the body.
+    SAST: Look for route handlers that decode an auth token but compare
+    token.user_id == token.user_id (trivially true) or that perform no
+    comparison at all between the token identity and the requested resource ID.
+
+  remediation_steps:
+    - Extract the authenticated user's identity from the validated token.
+    - Compare token.user_id with the resource ID in the URL before serving data.
+    - Grant access only if they match or if the token carries an admin role.
+    - Return 403 Forbidden (not 404) for mismatched requests so the difference
+      between "does not exist" and "not allowed" is not leaked.
+    - Apply the same check to every write endpoint (PUT, PATCH, DELETE) that
+      operates on user-scoped objects.
+
+  secure_coding_recommendation: >
+    Never trust client-supplied resource identifiers for access decisions.
+    Always derive the owner from the server-side session or validated token
+    and enforce ownership in a centralised authorization layer, not ad-hoc
+    inside each route handler.
+
+  references:
+    - https://owasp.org/API-Security/editions/2023/en/0xa1-broken-object-level-authorization/
+    - https://cwe.mitre.org/data/definitions/639.html
+
+
+- id: KB-002
+  rule_ref: NB-APPSEC-002
+  name: Broken Access Control — Missing Function-Level Authorization
+  category: Access Control
+  affected_technology: REST API, web applications with role-based sections
+  owasp_top10: A01:2021 — Broken Access Control
+  owasp_api: API5:2023 — Broken Function Level Authorization
+  cwe: CWE-862 — Missing Authorization
+  severity: Critical
+
+  description: >
+    An administrative or privileged endpoint exists and is reachable without
+    any authentication or role check. Any unauthenticated client that discovers
+    the URL can invoke it and access all protected functionality, in this case
+    enumerating all user accounts including sensitive fields.
+
+  business_impact: >
+    Complete loss of access control for all administrative functions. An
+    attacker can enumerate users, harvest credentials, escalate privileges,
+    or trigger destructive admin operations without any credentials.
+
+  technical_impact: >
+    Full read/write access to whatever the admin endpoint exposes. In a real
+    application this commonly includes password reset, user deletion, role
+    assignment, and configuration changes.
+
+  detection_logic: >
+    DAST: Send an unauthenticated GET request to /admin/users. If the response
+    is 200 and contains a user list, the check fires. NB-APPSEC-002 uses this
+    exact method, checking for HTTP 200 and the presence of "username" in the
+    response body.
+    SAST: Look for route handlers decorated with admin-level paths (/admin/*)
+    that do not call an authentication middleware or perform a role check before
+    returning data.
+
+  remediation_steps:
+    - Add an authentication check as the first step in every admin route
+      handler (or via a centralised middleware applied to the /admin/* prefix).
+    - After authentication, verify the token's role claim equals "admin" or
+      the equivalent privileged role.
+    - Return 401 Unauthorized when no valid token is present; return 403
+      Forbidden when the token is valid but the role is insufficient.
+    - Apply the principle of least privilege — no route should be less
+      protected than the sensitivity of the data it returns.
+
+  secure_coding_recommendation: >
+    Register admin routes under a dedicated blueprint or router and attach a
+    require_admin middleware to the entire blueprint rather than adding checks
+    manually to each handler. This ensures new admin routes added later are
+    protected by default.
+
+  references:
+    - https://owasp.org/Top10/A01_2021-Broken_Access_Control/
+    - https://cwe.mitre.org/data/definitions/862.html
+
+
+- id: KB-003
+  rule_ref: NB-APPSEC-003
+  name: Mass Assignment (Broken Object Property Level Authorization)
+  category: Access Control
+  affected_technology: REST APIs that accept JSON bodies and map them to objects
+  owasp_top10: A01:2021 — Broken Access Control
+  owasp_api: API3:2023 — Broken Object Property Level Authorization
+  cwe: CWE-915 — Improperly Controlled Modification of Dynamically-Determined Object Attributes
+  severity: High
+
+  description: >
+    The API accepts a JSON body and merges it wholesale into the stored object
+    without filtering which fields are client-writable. An attacker can include
+    privileged fields such as "role", "is_admin", or "id" in the request body
+    and have them silently applied, elevating their own privileges or corrupting
+    system data.
+
+  business_impact: >
+    Attackers can self-escalate to administrator roles, override billing
+    status, modify audit fields, or corrupt data integrity — all using
+    normal API credentials through the same endpoint legitimate users use
+    to update their profiles.
+
+  technical_impact: >
+    Loss of data integrity. Any field on the internal model becomes writable
+    by anyone with access to the endpoint, bypassing all role and permission
+    checks that would otherwise gate access to those fields.
+
+  detection_logic: >
+    DAST: Authenticate as a normal user and send a PUT to /profile/<id> with
+    {"role": "admin"} in the body. Re-fetch the profile and check whether the
+    role field changed. NB-APPSEC-003 checks for a 200 response followed by
+    "admin" appearing in a subsequent profile fetch.
+    SAST: Look for patterns where request.json or request.get_json() is spread
+    directly into an object update without an explicit field allowlist.
+
+  remediation_steps:
+    - Define an explicit allowlist of fields the client is permitted to update
+      (e.g. UPDATABLE_FIELDS = ["email", "display_name"]).
+    - Filter the incoming body against that allowlist before applying any
+      changes to the stored object.
+    - Never allow role, id, password_hash, is_admin, or any internal/system
+      fields to appear in the updatable set.
+    - Treat unlisted fields as if they were not sent — silently drop them
+      rather than returning an error (to avoid leaking internal field names).
+
+  secure_coding_recommendation: >
+    Use a serializer or schema validation library (marshmallow, pydantic) to
+    define exactly which fields are accepted for each operation. Load-then-
+    validate is safer than validate-then-load: deserialise first, then let the
+    schema reject unexpected keys before the object is ever mutated.
+
+  references:
+    - https://owasp.org/API-Security/editions/2023/en/0xa3-broken-object-property-level-authorization/
+    - https://cwe.mitre.org/data/definitions/915.html
+
+
+- id: KB-004
+  rule_ref: NB-APPSEC-004
+  name: Server-Side Request Forgery (SSRF)
+  category: Request Forgery
+  affected_technology: Any backend that fetches URLs on behalf of the client
+  owasp_top10: A10:2021 — Server-Side Request Forgery (SSRF)
+  owasp_api: API7:2023 — Server Side Request Forgery
+  cwe: CWE-918 — Server-Side Request Forgery (SSRF)
+  severity: High
+
+  description: >
+    The server fetches a URL supplied entirely by the client without validating
+    its destination. An attacker can supply an internal address (RFC1918, loopback,
+    cloud metadata endpoints such as 169.254.169.254) to pivot into internal
+    infrastructure, bypass firewall rules, enumerate internal services, or
+    exfiltrate cloud credentials.
+
+  business_impact: >
+    SSRF is commonly used to steal cloud provider credentials from instance
+    metadata endpoints, pivot to internal databases or admin panels, enumerate
+    internal network topology, and, in severe cases, achieve remote code
+    execution on internal services.
+
+  technical_impact: >
+    The server becomes a proxy that can reach any service visible from its
+    network position, bypassing all perimeter controls. The attacker sees the
+    response as if they made the internal request themselves.
+
+  detection_logic: >
+    DAST: Send POST /webhook/preview with {"url": "http://internal-service/"}
+    where internal-service is an address on the Docker internal network. If
+    the response contains content from that internal service, the vulnerability
+    is confirmed. NB-APPSEC-004 checks for a 200 response containing "httpbin"
+    or similar internal service markers.
+    SAST: Look for calls to requests.get(url), urllib.request.urlopen(url), or
+    equivalent where url is derived from user-supplied input without validation.
+
+  remediation_steps:
+    - Allowlist permitted URL schemes (https only; reject http, ftp, file, etc.).
+    - Resolve the hostname to an IP address before sending the request and
+      reject RFC1918 ranges, loopback (127.x), link-local (169.254.x.x),
+      and the IPv6 equivalents.
+    - Perform the resolution and the request in a single operation (or re-check
+      after resolution) to prevent DNS rebinding attacks.
+    - Never follow redirects automatically when the redirect destination has
+      not been re-validated against the allowlist.
+    - Consider using an egress proxy with an allowlist rather than implementing
+      the check in application code, as application-level checks are more
+      prone to bypass.
+
+  secure_coding_recommendation: >
+    Treat all outbound URLs as untrusted until proven otherwise. Resolve,
+    validate, then request — never request and validate. If the set of
+    valid destinations is small and known, prefer an allowlist of specific
+    domains over a blocklist of private ranges (blocklists are easy to
+    escape with novel encodings or DNS tricks).
+
+  references:
+    - https://owasp.org/Top10/A10_2021-Server-Side_Request_Forgery_%28SSRF%29/
+    - https://cwe.mitre.org/data/definitions/918.html
+    - https://portswigger.net/web-security/ssrf
+
+
+- id: KB-005
+  rule_ref: nb-jwt-alg-none-accepted / nb-jwt-hardcoded-secret
+  name: Insecure JWT Handling
+  category: Cryptographic Failures / Authentication
+  affected_technology: Any service using JSON Web Tokens for authentication
+  owasp_top10: A02:2021 — Cryptographic Failures
+  owasp_api: API2:2023 — Broken Authentication
+  cwe: CWE-347 — Improper Verification of Cryptographic Signature
+  severity: Critical
+
+  description: >
+    Two related weaknesses are grouped here because they share a root cause
+    (insufficient JWT validation) and are commonly found together.
+    (1) alg:none acceptance: The JWT library is called without explicitly
+    specifying which algorithms are acceptable. The "none" algorithm tells
+    the library to skip signature verification entirely, so an attacker can
+    forge any token with arbitrary claims by setting alg to "none".
+    (2) Hardcoded signing secret: The HMAC secret used to sign tokens is
+    a short, predictable, or version-controlled literal string. An attacker
+    who obtains the source code (or brute-forces the secret) can sign
+    arbitrary tokens that pass verification.
+
+  business_impact: >
+    Either weakness allows complete authentication bypass. An attacker can
+    create a token claiming to be any user, including administrators, without
+    knowing their password or any secret.
+
+  technical_impact: >
+    Complete loss of authentication integrity. The entire access-control layer
+    built on top of JWT is rendered ineffective. All role checks, ownership
+    checks, and session management become bypassable.
+
+  detection_logic: >
+    SAST: nb-jwt-alg-none-accepted detects calls to jwt.decode() that do not
+    pass a concrete algorithms=[...] list (or pass algorithms=["none"]).
+    nb-jwt-hardcoded-secret detects string literals passed directly as the
+    key argument to jwt.encode() or jwt.decode().
+
+  remediation_steps:
+    - Always pass algorithms=["HS256"] (or whichever algorithm your application
+      uses) to jwt.decode(). Never pass algorithms=["none"] or omit the argument.
+    - Read the signing secret from an environment variable or secret manager
+      at startup. Never hardcode it in source code.
+    - Generate secrets with a cryptographically secure random generator
+      (secrets.token_hex(32) in Python). Use at least 256 bits of entropy.
+    - Add an exp (expiration) claim to every token and validate it on decode.
+    - Add an iss (issuer) and aud (audience) claim and validate them to prevent
+      tokens from one service being replayed at another.
+
+  secure_coding_recommendation: >
+    Treat the JWT signing secret the same as a database password — it must
+    never appear in source code, never be checked into version control,
+    and must be rotated if exposure is suspected. Use a secrets management
+    solution (HashiCorp Vault, AWS Secrets Manager, environment-injected
+    Kubernetes secrets) for production deployments.
+
+  references:
+    - https://auth0.com/blog/critical-vulnerabilities-in-json-web-token-libraries/
+    - https://cwe.mitre.org/data/definitions/347.html
+    - https://owasp.org/Top10/A02_2021-Cryptographic_Failures/
+
+
+- id: KB-006
+  rule_ref: NB-APPSEC-005
+  name: NoSQL Injection
+  category: Injection
+  affected_technology: Python/Flask backends with eval-based or dynamic query construction
+  owasp_top10: A03:2021 — Injection
+  owasp_api: API8:2023 — Security Misconfiguration (query misconfiguration)
+  cwe: CWE-943 — Improper Neutralization of Special Elements in Data Query Logic
+  severity: High
+
+  description: >
+    The search endpoint constructs its filter logic using Python's eval()
+    with unsanitised user input embedded in the expression string. An
+    attacker can craft a string that short-circuits the comparison and
+    always evaluates to True, returning all records in the store regardless
+    of the intended filter. In a real NoSQL database (MongoDB, CouchDB)
+    the same pattern appears when user input is merged into query operator
+    objects without sanitisation.
+
+  business_impact: >
+    Data exfiltration of all records accessible to the query. Depending on
+    the query context, attackers may also be able to execute arbitrary code
+    (when eval() or similar is used), modify data, or bypass authentication.
+
+  technical_impact: >
+    Authentication bypass and full data exfiltration. The eval()-based variant
+    in this platform is especially severe because it executes Python code,
+    not just a query predicate.
+
+  detection_logic: >
+    DAST: POST /search with {"username": "x' or True or 'x"} (the simulated
+    injection payload). If the response returns all users instead of zero
+    results, the vulnerability is confirmed. NB-APPSEC-005 checks for a 200
+    response and multiple user records.
+    SAST: Look for calls to eval() where any part of the evaluated string is
+    derived from request data. Also look for MongoDB query construction patterns
+    where request.json is merged into a query dict containing operators.
+
+  remediation_steps:
+    - Remove eval() entirely from all production code paths. There is no safe
+      way to use eval() on user input.
+    - For filtering, use plain string equality or a well-typed query builder
+      that never concatenates raw user input into executable strings.
+    - For real NoSQL databases (MongoDB), use the driver's native query API
+      and validate that operator keys ($where, $gt, etc.) cannot be injected
+      by the client.
+    - Apply strict input type validation — reject non-string filter values
+      before they reach any comparison logic.
+
+  secure_coding_recommendation: >
+    eval() on user-controlled data is effectively a remote code execution
+    vulnerability. Audit all uses of eval(), exec(), and compile() in the
+    codebase and eliminate every one that processes external input. For NoSQL
+    query construction, always use parameterised queries or the ORM/ODM's
+    native filter API.
+
+  references:
+    - https://owasp.org/Top10/A03_2021-Injection/
+    - https://cwe.mitre.org/data/definitions/943.html
+    - https://owasp.org/www-project-web-security-testing-guide/v42/4-Web_Application_Security_Testing/07-Input_Validation_Testing/05.6-Testing_for_NoSQL_Injection
+
+
+- id: KB-007
+  rule_ref: NB-APPSEC-006
+  name: Server-Side Template Injection (SSTI)
+  category: Injection
+  affected_technology: Python/Flask with Jinja2 or any server-side template engine
+  owasp_top10: A03:2021 — Injection
+  owasp_api: API3:2023 — (injection via untrusted data in template context)
+  cwe: CWE-1336 — Improper Neutralization of Special Elements Used in a Template Engine
+  severity: Critical
+
+  description: >
+    The endpoint constructs the Jinja2 template source string using an f-string
+    that embeds raw user input, then compiles and renders the result. Because
+    the user-supplied value becomes part of the template source (not merely
+    data passed to a pre-compiled template), any Jinja2 syntax in the input is
+    executed by the template engine. An attacker can escalate from template
+    expression execution to arbitrary Python code execution via the template
+    engine's object traversal capabilities.
+
+  business_impact: >
+    SSTI in Jinja2 regularly leads to full remote code execution (RCE) on the
+    server host. This means complete system compromise: arbitrary file read,
+    data exfiltration, lateral movement, and persistent backdoor installation.
+
+  technical_impact: >
+    An attacker can use Jinja2's object traversal (e.g. accessing __class__,
+    __mro__, __subclasses__) to reach Python's subprocess module and execute
+    arbitrary shell commands. This is a standard, well-documented technique.
+
+  detection_logic: >
+    DAST: POST /render with {"name": "{{7*7}}"} — if the response contains
+    "49" (the evaluated result) rather than the literal string "{{7*7}}",
+    SSTI is confirmed. NB-APPSEC-006 checks for "49" in the response body.
+    SAST: Look for Template() or Environment().from_string() calls where the
+    template string argument is constructed from user input rather than being
+    a fixed literal.
+
+  remediation_steps:
+    - Fix the template source as a literal string, never building it from
+      user-supplied data (Template("Hello, {{ name }}!")).
+    - Pass user input as render data only (template.render(name=user_input)),
+      not as part of the template source.
+    - Enable Jinja2's autoescape=True to prevent XSS in the rendered output
+      even when the injection is prevented.
+    - If templates must be user-configurable (CMS use cases), use a sandboxed
+      environment (jinja2.sandbox.SandboxedEnvironment) and whitelist the
+      globals and filters available.
+
+  secure_coding_recommendation: >
+    The fundamental rule: user input must only ever reach the render data
+    layer, never the template compilation layer. Separating "template source"
+    (trusted, developer-written) from "template variables" (untrusted,
+    user-supplied) eliminates SSTI entirely. Audit every Template() and
+    from_string() call to confirm its argument is a fixed literal.
+
+  references:
+    - https://portswigger.net/research/server-side-template-injection
+    - https://cwe.mitre.org/data/definitions/1336.html
+    - https://jinja.palletsprojects.com/en/3.x/sandbox/
+
+
+- id: KB-008
+  rule_ref: NB-APPSEC-010
+  name: Insecure File Upload
+  category: Insecure Design
+  affected_technology: Any backend with a file upload endpoint
+  owasp_top10: A04:2021 — Insecure Design
+  owasp_api: API4:2023 — Unrestricted Resource Consumption / Unsafe Consumption
+  cwe: CWE-434 — Unrestricted Upload of File with Dangerous Type
+  severity: High
+
+  description: >
+    The upload endpoint accepts any file type, trusts the client-supplied
+    filename (including path separators), and applies no size limit. An
+    attacker can upload a web shell, malicious script, or oversized file.
+    If uploaded files are served from the web root or accessible by the
+    application runtime, code execution or denial of service follows.
+
+  business_impact: >
+    Web shell upload is one of the most common paths to full server compromise.
+    Even without direct execution, storing attacker-controlled files can be
+    used to serve malicious content to other users (stored XSS via SVG/HTML
+    upload), exhaust disk space, or leak server path information via the
+    returned filename.
+
+  technical_impact: >
+    Depending on how uploaded files are stored and served: remote code
+    execution (if the server executes uploaded scripts), stored XSS (if
+    HTML/SVG files are served inline), or denial of service (unbounded file
+    sizes). Path traversal via the filename can overwrite arbitrary server files.
+
+  detection_logic: >
+    DAST: Upload a .php file (or .py, .sh, etc.) — if the server accepts it
+    with a 200 response, the check fails. NB-APPSEC-010 uploads a minimal
+    .php payload and checks for a non-error response.
+    SAST: Look for file save operations that use request.files[...].filename
+    directly (without sanitisation or replacement) as the target path, or
+    upload handlers that apply no extension check before saving.
+
+  remediation_steps:
+    - Maintain an explicit extension allowlist (e.g. jpg, jpeg, png, pdf, txt)
+      and reject anything not on the list.
+    - Replace the client-supplied filename entirely with a server-generated
+      UUID before saving. Never use the original name as a file path component.
+    - Enforce a maximum upload size (2 MB is a reasonable default for profile
+      images; adjust for the use case).
+    - Store uploaded files outside the web root, or in object storage, so
+      they cannot be executed even if the wrong type slips through.
+    - If MIME type detection is required, use python-magic (libmagic) to
+      check the file's actual magic bytes, not the client-supplied
+      Content-Type or file extension.
+
+  secure_coding_recommendation: >
+    The only safe filename for a server-stored file is one the server
+    generated itself. Treat every client-supplied filename as hostile input:
+    it may contain path traversal characters, null bytes, or misleading
+    double extensions (.jpg.php). Generate, don't trust.
+
+  references:
+    - https://owasp.org/www-community/vulnerabilities/Unrestricted_File_Upload
+    - https://cwe.mitre.org/data/definitions/434.html
+
+
+- id: KB-009
+  rule_ref: NB-APPSEC-007 / NB-APPSEC-008 / NB-APPSEC-009
+  name: Missing or Misconfigured Security Headers
+  category: Security Misconfiguration
+  affected_technology: All HTTP-serving web applications and APIs
+  owasp_top10: A05:2021 — Security Misconfiguration
+  owasp_api: API8:2023 — Security Misconfiguration
+  cwe: CWE-1021 — Improper Restriction of Rendered UI Layers or Frames
+  severity: Medium
+
+  description: >
+    The application returns responses without HTTP security headers that
+    instruct browsers how to handle the content. Three headers are absent
+    by default in this platform: Content-Security-Policy (prevents XSS
+    and data injection attacks), Strict-Transport-Security (enforces HTTPS
+    and prevents SSL stripping), and X-Content-Type-Options (prevents
+    MIME-type sniffing). Each absent header removes a layer of browser-side
+    defence-in-depth.
+
+  business_impact: >
+    Missing CSP allows cross-site scripting to steal session cookies and
+    credentials. Missing HSTS allows network attackers to downgrade HTTPS
+    connections and intercept traffic. Missing X-Content-Type-Options
+    enables drive-by content-type confusion attacks. Collectively, missing
+    headers are a common finding in PCI DSS, ISO 27001, and SOC2 assessments
+    and contribute to failing security posture grades.
+
+  technical_impact: >
+    Per header: CSP absence enables script injection; HSTS absence enables
+    SSL stripping; X-Content-Type-Options absence enables MIME sniffing
+    (e.g. serving a text file that the browser executes as JavaScript).
+
+  detection_logic: >
+    DAST: Three separate rules check for each header's presence in the
+    response headers of a representative endpoint.
+    NB-APPSEC-007 checks for Content-Security-Policy.
+    NB-APPSEC-008 checks for Strict-Transport-Security.
+    NB-APPSEC-009 checks for X-Content-Type-Options.
+    Each rule sends a GET request and checks response.headers for the
+    relevant key.
+
+  remediation_steps:
+    - Add all three headers (and optionally X-Frame-Options for older browsers)
+      in a single after_request hook so every route benefits automatically.
+    - "Content-Security-Policy: default-src 'self'" is a safe starting point;
+      tighten the policy to match the application's actual resource origins.
+    - "Strict-Transport-Security: max-age=63072000; includeSubDomains" is
+      recommended once HTTPS is fully deployed. Start without preload until
+      the configuration is confirmed stable.
+    - "X-Content-Type-Options: nosniff" has no valid reason to be absent.
+    - Do not add X-XSS-Protection — it is deprecated and can introduce
+      vulnerabilities in older browsers. CSP replaces it.
+
+  secure_coding_recommendation: >
+    Set security headers in a framework-level hook or reverse-proxy
+    configuration (nginx, Caddy) rather than inside individual route handlers.
+    This guarantees coverage for all routes, including those added in the
+    future, and keeps the headers testable in isolation.
+
+  references:
+    - https://owasp.org/www-project-secure-headers/
+    - https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP
+    - https://hstspreload.org/
+
+
+- id: KB-010
+  rule_ref: NB-APPSEC-011
+  name: XML External Entity Injection (XXE)
+  category: Security Misconfiguration
+  affected_technology: Any application that parses XML input
+  owasp_top10: A05:2021 — Security Misconfiguration
+  owasp_api: API8:2023 — Security Misconfiguration
+  cwe: CWE-611 — Improper Restriction of XML External Entity Reference
+  severity: High
+
+  description: >
+    The XML parser is configured to resolve external entities and make
+    network connections during parsing. An attacker can craft an XML
+    document that declares an external entity referencing a local file
+    (file:///etc/passwd) or an internal network address. When the parser
+    resolves the entity, the referenced content is substituted into the
+    parsed document and returned in the response — leaking file contents
+    or enabling SSRF via the parser.
+
+  business_impact: >
+    Local file disclosure (reading configuration files, /etc/shadow,
+    application secrets) and SSRF via the XML parser, which can be used to
+    probe internal services. In environments with DTD-enabled parsers,
+    Billion Laughs attacks can cause denial of service.
+
+  technical_impact: >
+    Arbitrary local file read (limited to files readable by the application
+    process user). Depending on parser configuration, potential for SSRF and
+    denial of service via entity expansion.
+
+  detection_logic: >
+    DAST: POST /xml/parse with an XML payload containing an external entity
+    declaration referencing a known file. If the response body contains the
+    file's contents (or the entity reference is resolved rather than returned
+    as literal text), XXE is confirmed. NB-APPSEC-011 uses a file:///etc/os-release
+    reference and checks for "NAME=" in the response.
+    SAST: Look for XMLParser() or etree.fromstring() calls without explicit
+    resolve_entities=False. The default in many parsers is to resolve entities.
+
+  remediation_steps:
+    - Pass resolve_entities=False to the lxml XMLParser constructor.
+    - Also set no_network=True to prevent network-based entity fetching.
+    - If using Python's standard library xml.etree.ElementTree, it is safe
+      by default in Python 3.8+ (expat does not resolve external entities).
+      Older versions should use defusedxml instead.
+    - If DTD support is not needed, disable it entirely (load_dtd=False).
+    - Never use xml.sax or xml.dom.minidom on untrusted input without
+      defusedxml wrapping, as these parsers resolve external entities by default.
+
+  secure_coding_recommendation: >
+    The safest approach for untrusted XML input is to use the defusedxml
+    library, which disables all dangerous XML features (external entities,
+    entity expansion, DTD loading) by default. If lxml is required for
+    schema validation, always construct the parser with resolve_entities=False
+    and test with a known XXE payload before deploying.
+
+  references:
+    - https://owasp.org/www-community/vulnerabilities/XML_External_Entity_(XXE)_Processing
+    - https://cwe.mitre.org/data/definitions/611.html
+    - https://pypi.org/project/defusedxml/
+
+
+- id: KB-011
+  rule_ref: nb-insecure-deserialization-pickle
+  name: Insecure Deserialization
+  category: Software and Data Integrity Failures
+  affected_technology: Python applications using pickle for serialization
+  owasp_top10: A08:2021 — Software and Data Integrity Failures
+  owasp_api: API8:2023 — Security Misconfiguration
+  cwe: CWE-502 — Deserialization of Untrusted Data
+  severity: Critical
+
+  description: >
+    The endpoint accepts a base64-encoded blob from the client and passes
+    it directly to pickle.loads() for deserialization. Python's pickle
+    format can encode arbitrary Python objects including those with custom
+    __reduce__ methods that execute code during deserialization. An attacker
+    who controls the pickle payload achieves arbitrary code execution at the
+    moment the server calls pickle.loads().
+
+  business_impact: >
+    Insecure deserialization is reliably exploitable for remote code execution.
+    A single crafted request can install a reverse shell, exfiltrate all
+    application data and environment variables (including secrets), destroy
+    data, or pivot to internal infrastructure — all without valid credentials.
+
+  technical_impact: >
+    Full remote code execution in the context of the application process.
+    The attacker's code runs with the same permissions as the application,
+    typically including filesystem access, environment variable access, and
+    network access.
+
+  detection_logic: >
+    SAST: nb-insecure-deserialization-pickle detects calls to pickle.loads()
+    or pickle.load() where the data argument is derived from a request object
+    (request.json, request.data, request.get_json(), etc.) rather than a
+    trusted, server-controlled source.
+
+  remediation_steps:
+    - Replace pickle.loads() with json.loads() for data interchange. JSON
+      cannot encode executable code, so deserialization cannot execute
+      attacker-controlled code.
+    - If the use case genuinely requires a binary serialisation format,
+      use msgpack or CBOR with a strict schema validator applied after
+      deserialization.
+    - If pickle is unavoidable for internal use (e.g. caching model objects),
+      never accept pickle data from external HTTP clients. Sign internal pickle
+      payloads with HMAC and verify the signature before calling pickle.loads().
+    - Apply a minimal schema check immediately after JSON parsing: verify the
+      top-level type, required keys, and value types before using any field.
+
+  secure_coding_recommendation: >
+    The rule is simple: never call pickle.loads() on data you did not create
+    yourself on the same trusted system. Pickle is a code execution mechanism
+    disguised as a serialisation format. Use data-only formats (JSON, YAML
+    with safe_load, TOML) for any data that crosses a trust boundary.
+
+  references:
+    - https://owasp.org/Top10/A08_2021-Software_and_Data_Integrity_Failures/
+    - https://cwe.mitre.org/data/definitions/502.html
+    - https://docs.python.org/3/library/pickle.html#restricting-globals

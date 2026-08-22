@@ -1,0 +1,459 @@
+# NoBreach AppSec Rulesmith — Remediation Recommendations Library
+# Week 7 deliverable. Reusable guidance patterns referenced from
+# knowledge_base/vulnerabilities.yml and the sample AppSec report.
+# Each entry is a standalone recommendation that can be cited in
+# assessment reports, developer guidance, and secure code reviews.
+
+---
+
+- id: REC-001
+  title: Enforce Object-Level Authorization on Every Resource Endpoint
+  category: Access Control
+  applies_to:
+    - Broken Object Level Authorization (IDOR)
+    - Mass Assignment
+  effort: Low
+  priority: Critical
+
+  summary: >
+    Validate that the authenticated principal owns or is authorised to
+    access the specific resource before returning or modifying it.
+
+  implementation:
+    - Decode and validate the JWT or session token on every request.
+    - Extract the caller's identity (user_id, tenant_id) from the token.
+    - Compare that identity with the resource identifier in the URL or body
+      before performing any read or write.
+    - For admin overrides, explicitly check that token.role == "admin"
+      rather than relying on a missing error path.
+    - Return 403 Forbidden when the check fails; never return 404 for
+      authorisation failures (it leaks resource existence).
+
+  code_snippet_python: |
+    # Correct pattern — enforce ownership before returning data
+    @app.route("/profile/<int:user_id>", methods=["GET"])
+    def get_profile(user_id):
+        token = decode_token(request.headers.get("Authorization"))
+        if token["user_id"] != user_id and token.get("role") != "admin":
+            return {"error": "forbidden"}, 403
+        return get_user(user_id)
+
+  anti_pattern: |
+    # Wrong — authenticates the caller but never checks ownership
+    @app.route("/profile/<int:user_id>", methods=["GET"])
+    def get_profile(user_id):
+        token = decode_token(request.headers.get("Authorization"))
+        # token is valid but never compared to user_id
+        return get_user(user_id)
+
+
+- id: REC-002
+  title: Use an Explicit Field Allowlist for All Write Operations
+  category: Access Control
+  applies_to:
+    - Mass Assignment
+  effort: Low
+  priority: High
+
+  summary: >
+    Define the exact set of fields a client may modify and filter all
+    incoming data against that list before applying any changes.
+
+  implementation:
+    - Define UPDATABLE_FIELDS as a module-level constant listing only
+      client-writable fields (e.g. ["email", "display_name"]).
+    - Filter the request body through the allowlist before merging:
+      filtered = {k: v for k, v in body.items() if k in UPDATABLE_FIELDS}
+    - Log and drop (silently) any fields not on the allowlist — do not
+      return an error that names the rejected field, as that leaks the
+      internal model schema.
+    - Never include id, role, password, is_admin, or any computed/system
+      field in the allowlist.
+
+  code_snippet_python: |
+    UPDATABLE_FIELDS = {"email", "display_name"}
+
+    @app.route("/profile/<int:user_id>", methods=["PUT"])
+    def update_profile(user_id):
+        body = request.get_json() or {}
+        update = {k: v for k, v in body.items() if k in UPDATABLE_FIELDS}
+        apply_update(user_id, update)
+        return get_user(user_id)
+
+  anti_pattern: |
+    # Wrong — entire body merged without filtering
+    user.update(request.get_json())
+
+
+- id: REC-003
+  title: Centralise Authentication and Role Checks via Middleware
+  category: Access Control
+  applies_to:
+    - Broken Access Control (missing admin authorization)
+    - Broken Object Level Authorization (IDOR)
+  effort: Medium
+  priority: Critical
+
+  summary: >
+    Attach authentication and role enforcement to route groups via
+    a middleware or decorator rather than adding ad-hoc checks inside
+    each handler. This ensures new routes are protected by default.
+
+  implementation:
+    - Create a require_auth(roles=None) decorator that validates the JWT,
+      injects the token payload into the request context, and optionally
+      checks the role claim.
+    - Apply @require_auth(roles=["admin"]) to every admin route.
+    - Register the decorator on a Flask Blueprint for the /admin/* prefix
+      so all future routes in that blueprint inherit the check.
+    - Write a test that verifies a 401 is returned for every admin route
+      when no token is supplied.
+
+  code_snippet_python: |
+    from functools import wraps
+    import jwt
+
+    def require_auth(roles=None):
+        def decorator(f):
+            @wraps(f)
+            def wrapper(*args, **kwargs):
+                header = request.headers.get("Authorization", "")
+                try:
+                    token = jwt.decode(header.split(" ")[-1],
+                                       SECRET, algorithms=["HS256"])
+                except jwt.PyJWTError:
+                    return {"error": "unauthenticated"}, 401
+                if roles and token.get("role") not in roles:
+                    return {"error": "forbidden"}, 403
+                request.token = token
+                return f(*args, **kwargs)
+            return wrapper
+        return decorator
+
+    @app.route("/admin/users")
+    @require_auth(roles=["admin"])
+    def admin_users():
+        return list_all_users()
+
+
+- id: REC-004
+  title: Validate and Block Private IP Targets Before Outbound Requests
+  category: Request Forgery
+  applies_to:
+    - Server-Side Request Forgery (SSRF)
+  effort: Medium
+  priority: High
+
+  summary: >
+    Resolve the target URL's hostname to an IP address and reject any
+    address in private, loopback, or link-local ranges before allowing
+    the application to make the outbound request.
+
+  implementation:
+    - Accept only https:// scheme; reject http, ftp, file, gopher, etc.
+    - Resolve the hostname with socket.getaddrinfo() before sending.
+    - Check the resolved IP with ipaddress.ip_address(ip).is_private,
+      is_loopback, and is_link_local — reject on any True result.
+    - Perform the resolution and the outbound request in a single operation
+      or re-validate after any redirect to prevent DNS rebinding.
+    - Never follow redirects automatically without re-validating the
+      redirect destination against the same checks.
+
+  code_snippet_python: |
+    import ipaddress, socket
+    from urllib.parse import urlparse
+
+    def is_blocked_target(url: str) -> tuple[bool, str]:
+        parsed = urlparse(url)
+        if parsed.scheme != "https":
+            return True, f"scheme '{parsed.scheme}' is not allowed"
+        try:
+            ip = socket.getaddrinfo(parsed.hostname, None)[0][4][0]
+            addr = ipaddress.ip_address(ip)
+        except Exception as e:
+            return True, f"resolution failed: {e}"
+        if addr.is_private or addr.is_loopback or addr.is_link_local:
+            return True, f"non-public address {ip}"
+        return False, ""
+
+
+- id: REC-005
+  title: Use Parameterised Queries and Eliminate eval() on User Input
+  category: Injection
+  applies_to:
+    - NoSQL Injection
+    - SQL Injection
+  effort: Low
+  priority: Critical
+
+  summary: >
+    Never build query predicates or filter expressions by concatenating or
+    evaluating user input. Use the data layer's native parameterised
+    interface or plain equality comparisons.
+
+  implementation:
+    - Remove all eval(), exec(), and compile() calls that process external
+      input. There is no safe use of eval() on client-supplied data.
+    - For in-memory filtering, use plain Python equality: user["name"] == value.
+    - For SQL, always use parameterised statements (cursor.execute(sql, params)).
+    - For MongoDB, use the driver's native filter dict API and reject any
+      request body that contains keys starting with "$".
+    - Apply type validation before the filter reaches any query logic — reject
+      non-string values for string filters, non-integer values for ID fields.
+
+  code_snippet_python: |
+    # Correct — plain equality, no eval
+    def search_users(username_filter: str):
+        if not isinstance(username_filter, str):
+            return []
+        return [u for u in USERS if u["username"] == username_filter]
+
+  anti_pattern: |
+    # Wrong — eval on user input = remote code execution
+    result = [u for u in USERS
+              if eval(f"'{filter}' == username", {"username": u["username"]})]
+
+
+- id: REC-006
+  title: Separate Template Source from Template Data
+  category: Injection
+  applies_to:
+    - Server-Side Template Injection (SSTI)
+  effort: Low
+  priority: Critical
+
+  summary: >
+    Fix the template source string as a developer-written constant and
+    pass user input only as render variables, never as part of the
+    template source itself.
+
+  implementation:
+    - Write the template as a fixed string literal in source code:
+      TMPL = Template("Hello, {{ name }}!")
+    - Render with user input as a variable: TMPL.render(name=user_input)
+    - Never use f-strings, .format(), or string concatenation to build the
+      template source string from user-controlled values.
+    - Enable autoescape=True in the Jinja2 Environment for HTML output to
+      prevent XSS in the rendered content.
+
+  code_snippet_python: |
+    from jinja2 import Template
+
+    GREETING_TMPL = Template("Hello, {{ name }}!")  # fixed at module load
+
+    @app.route("/render", methods=["POST"])
+    def render():
+        name = request.get_json().get("name", "")
+        return {"message": GREETING_TMPL.render(name=name)}
+
+  anti_pattern: |
+    # Wrong — user input becomes part of the template source
+    tmpl = Template(f"Hello, {name}!")  # name may contain {{ ... }}
+    return tmpl.render()
+
+
+- id: REC-007
+  title: Restrict File Uploads to an Explicit Extension Allowlist
+  category: Insecure Design
+  applies_to:
+    - Insecure File Upload
+  effort: Low
+  priority: High
+
+  summary: >
+    Validate uploaded file extensions against an explicit allowlist, replace
+    the client-supplied filename with a server-generated UUID, and enforce
+    a maximum file size.
+
+  implementation:
+    - Define ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".pdf", ".txt"}.
+    - Extract the extension with os.path.splitext() and reject if not in the set.
+    - Generate a random filename: f"{uuid.uuid4()}{ext}" — never use the
+      client's original filename as a path component.
+    - Check len(file.read()) against a size limit before saving;
+      seek back to 0 before writing.
+    - Store files outside the web root or in object storage to prevent
+      direct execution.
+
+  code_snippet_python: |
+    import os, uuid
+    from werkzeug.utils import secure_filename
+
+    ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".pdf", ".txt"}
+    MAX_SIZE_BYTES = 2 * 1024 * 1024  # 2 MB
+
+    @app.route("/upload", methods=["POST"])
+    def upload():
+        f = request.files.get("file")
+        ext = os.path.splitext(f.filename)[1].lower()
+        if ext not in ALLOWED_EXTENSIONS:
+            return {"error": f"file type '{ext}' is not allowed"}, 400
+        data = f.read()
+        if len(data) > MAX_SIZE_BYTES:
+            return {"error": "file too large"}, 413
+        safe_name = f"{uuid.uuid4()}{ext}"
+        with open(os.path.join(UPLOAD_DIR, safe_name), "wb") as out:
+            out.write(data)
+        return {"filename": safe_name}, 201
+
+
+- id: REC-008
+  title: Add Security Headers in a Single Framework-Level Hook
+  category: Security Misconfiguration
+  applies_to:
+    - Missing / Misconfigured Security Headers
+  effort: Low
+  priority: Medium
+
+  summary: >
+    Set all required HTTP security headers in one after_request hook so every
+    route benefits automatically, including those added in the future.
+
+  implementation:
+    - Register @app.after_request to add the headers on every response.
+    - Include at minimum: X-Content-Type-Options, X-Frame-Options,
+      Content-Security-Policy, and Strict-Transport-Security.
+    - Omit X-XSS-Protection — it is deprecated; CSP replaces it.
+    - Start with Content-Security-Policy: default-src 'self' and refine
+      as the application's actual resource origins are confirmed.
+
+  code_snippet_python: |
+    @app.after_request
+    def add_security_headers(response):
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Content-Security-Policy"] = "default-src 'self'"
+        response.headers["Strict-Transport-Security"] = (
+            "max-age=63072000; includeSubDomains"
+        )
+        return response
+
+
+- id: REC-009
+  title: Disable XML External Entity Resolution in All XML Parsers
+  category: Security Misconfiguration
+  applies_to:
+    - XML External Entity Injection (XXE)
+  effort: Low
+  priority: High
+
+  summary: >
+    Configure every XML parser in the application to reject external entities
+    and DTD network access. The simplest option is to use the defusedxml library,
+    which disables all dangerous XML features by default.
+
+  implementation:
+    - Add defusedxml to requirements.txt and replace all xml.etree,
+      xml.sax, and xml.dom.minidom calls with defusedxml equivalents.
+    - If lxml must be used, construct the parser explicitly:
+      XMLParser(resolve_entities=False, no_network=True, load_dtd=False).
+    - Test with a known XXE payload (entity declaration referencing
+      file:///etc/os-release) and confirm the entity is not resolved.
+    - Never call etree.fromstring(data) without an explicit parser argument
+      — the default lxml parser resolves entities.
+
+  code_snippet_python: |
+    # Option 1 — defusedxml (recommended)
+    import defusedxml.ElementTree as ET
+    root = ET.fromstring(xml_bytes)
+
+    # Option 2 — lxml with safe parser
+    from lxml import etree
+    parser = etree.XMLParser(resolve_entities=False,
+                             no_network=True, load_dtd=False)
+    root = etree.fromstring(xml_bytes, parser=parser)
+
+
+- id: REC-010
+  title: Replace pickle with JSON for All Client-Supplied Data
+  category: Software and Data Integrity Failures
+  applies_to:
+    - Insecure Deserialization
+  effort: Low
+  priority: Critical
+
+  summary: >
+    Never deserialise pickle data received from an untrusted source.
+    Replace pickle with a data-only serialisation format (JSON, TOML, msgpack)
+    that cannot encode executable code.
+
+  implementation:
+    - Replace pickle.loads(data) with json.loads(data) for all endpoints
+      that accept client-supplied payloads.
+    - Apply a schema check immediately after JSON parsing: verify the
+      top-level type, required keys, and value types.
+    - If pickle is needed for internal caching (ML model objects, etc.),
+      keep it completely internal — sign payloads with HMAC and verify
+      before calling pickle.loads(), and never expose the endpoint externally.
+    - Run grep -r "pickle.loads" in CI to fail the build if a new
+      unsafe deserialisation is introduced.
+
+  code_snippet_python: |
+    import json
+
+    @app.route("/import", methods=["POST"])
+    def import_data():
+        body = request.get_json() or {}
+        raw = body.get("data", "")
+        try:
+            obj = json.loads(raw)
+        except (json.JSONDecodeError, TypeError):
+            return {"error": "invalid payload"}, 400
+        if not isinstance(obj, dict):
+            return {"error": "payload must be a JSON object"}, 400
+        process(obj)
+        return {"status": "imported"}, 200
+
+  anti_pattern: |
+    # Wrong — executes arbitrary code during deserialization
+    import pickle, base64
+    obj = pickle.loads(base64.b64decode(body["data"]))
+
+
+- id: REC-011
+  title: Manage JWT Secrets via Environment Variables
+  category: Cryptographic Failures
+  applies_to:
+    - Insecure JWT Handling
+  effort: Low
+  priority: Critical
+
+  summary: >
+    Read the JWT signing secret from the environment at startup, generate a
+    random fallback if none is set, and always specify the accepted algorithm
+    list explicitly.
+
+  implementation:
+    - Read the secret: SECRET = os.environ.get("JWT_SECRET") or secrets.token_hex(32)
+    - Pass algorithms=["HS256"] (or the appropriate algorithm) to jwt.decode().
+    - Never pass algorithms=["none"] or omit the algorithms argument.
+    - Add exp, iss, and aud claims to every issued token and validate them
+      on decode using options={"require": ["exp", "iss"]}.
+    - Add JWT_SECRET to .gitignore and document it in setup.md as a required
+      environment variable.
+
+  code_snippet_python: |
+    import os, secrets, jwt
+    from datetime import datetime, timedelta, timezone
+
+    SECRET = os.environ.get("JWT_SECRET") or secrets.token_hex(32)
+    ALGORITHM = "HS256"
+
+    def issue_token(user_id: int, role: str) -> str:
+        payload = {
+            "user_id": user_id,
+            "role": role,
+            "iss": "nobreach-api",
+            "exp": datetime.now(timezone.utc) + timedelta(hours=1),
+        }
+        return jwt.encode(payload, SECRET, algorithm=ALGORITHM)
+
+    def verify_token(token: str) -> dict:
+        return jwt.decode(token, SECRET,
+                          algorithms=[ALGORITHM],
+                          options={"require": ["exp", "iss"]})
+
+  anti_pattern: |
+    # Wrong — hardcoded secret, alg:none accepted
+    SECRET = "secret123"
+    jwt.decode(token, SECRET, algorithms=["HS256", "none"])
