@@ -17,6 +17,7 @@ rules. It combines:
 - OWASP Top 10 / OWASP API Top 10 / CWE mapping
 - Secure fixes and a before/after remediation validation workflow
 - A reusable knowledge base and developer security checklist
+- A sample technical AppSec assessment report
 
 ## Vulnerability Focus
 
@@ -57,7 +58,9 @@ third-party infrastructure without explicit written authorization. See
 
 ✅ Week 6 — Secure fixes & remediation validation (all 11 vulnerabilities fixed in apps/secure-api/, 100% remediation rate confirmed)
 
-🚧 Week 7 — Knowledge base, checklist, sample report (next up)
+✅ Week 7 — Knowledge base, developer checklist, OWASP/CWE mappings, before/after comparison, sample AppSec report
+
+🚧 Week 8 — Final testing, documentation, demo (next up)
 
 ## Quick Start
 
@@ -107,6 +110,22 @@ to be running. Re-runs every DAST and SAST rule against both, compares
 results per rule, and reports which vulnerabilities are fixed, still
 open, or regressed. See [`docs/secure-fixes.md`](docs/secure-fixes.md)
 for what each fix does and why.
+
+## Knowledge Base & Developer Resources
+
+The `knowledge_base/` directory contains reusable AppSec documentation
+built from the findings and evidence collected across Weeks 3–6:
+
+- [`knowledge_base/vulnerabilities.yml`](knowledge_base/vulnerabilities.yml) — full KB entry for each of the 11 vulnerabilities: description, business/technical impact, detection logic, remediation steps, secure coding recommendation, and OWASP/CWE mapping
+- [`knowledge_base/recommendations.yml`](knowledge_base/recommendations.yml) — reusable remediation patterns with wrong-vs-right Python code snippets for each vulnerability class
+- [`knowledge_base/secure-coding-checklist.md`](knowledge_base/secure-coding-checklist.md) — 15-section pre-deployment checklist for developers and code reviewers
+
+## Sample AppSec Report
+
+A complete sample technical assessment report is available in both formats:
+
+- [`reports/sample_appsec_report.md`](reports/sample_appsec_report.md) — Markdown version
+- [`reports/sample_appsec_report.html`](reports/sample_appsec_report.html) — Styled HTML version, ready for client presentation
 
 ## Repository Layout
 
