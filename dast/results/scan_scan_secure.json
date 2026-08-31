@@ -14,7 +14,7 @@
     "vulnerable": false,
     "evidence": "Response did not contain \"bob@example.com\".",
     "recommendation": "Verify the authenticated user's ID matches the requested user_id before returning profile data, instead of only checking that a token is present and valid.",
-    "timestamp": "2026-08-31T18:07:12.018730+00:00",
+    "timestamp": "2026-08-31T18:28:44.389708+00:00",
     "remediation_status": "not_applicable"
   },
   {
@@ -32,7 +32,7 @@
     "vulnerable": false,
     "evidence": "Response did not contain \"password\".",
     "recommendation": "Require a valid admin-role token before returning this endpoint's data. Returning sensitive fields like passwords with no authentication at all is a critical finding.",
-    "timestamp": "2026-08-31T18:07:12.021150+00:00",
+    "timestamp": "2026-08-31T18:28:44.392790+00:00",
     "remediation_status": "not_applicable"
   },
   {
@@ -50,7 +50,7 @@
     "vulnerable": false,
     "evidence": "Response did not contain \"\"role\": \"admin\"\".",
     "recommendation": "Apply an explicit allowlist of fields a client is permitted to update (e.g. email, display name) instead of merging the entire request body into the stored record.",
-    "timestamp": "2026-08-31T18:07:12.024085+00:00",
+    "timestamp": "2026-08-31T18:28:44.396271+00:00",
     "remediation_status": "not_applicable"
   },
   {
@@ -68,7 +68,7 @@
     "vulnerable": false,
     "evidence": "Response did not contain \"origin\".",
     "recommendation": "Restrict outbound requests to an explicit allowlist of external hosts, block requests to private/internal IP ranges, and never let a client fully control the target URL of a server-side request.",
-    "timestamp": "2026-08-31T18:07:12.026791+00:00",
+    "timestamp": "2026-08-31T18:28:44.398943+00:00",
     "remediation_status": "not_applicable"
   },
   {
@@ -86,7 +86,7 @@
     "vulnerable": false,
     "evidence": "Response did not contain \"admin@nobreach.local\".",
     "recommendation": "Never evaluate user-controlled input as code or as part of a query expression. Compare filter values as literal strings, or use a parameterized query API if a real database is introduced.",
-    "timestamp": "2026-08-31T18:07:12.028961+00:00",
+    "timestamp": "2026-08-31T18:28:44.401638+00:00",
     "remediation_status": "not_applicable"
   },
   {
@@ -104,7 +104,7 @@
     "vulnerable": false,
     "evidence": "Response did not contain \"Hello, 49!\".",
     "recommendation": "Never splice user input directly into template source. Pass user data in as template *context/data* instead, so it is rendered as a literal value rather than compiled as template syntax.",
-    "timestamp": "2026-08-31T18:07:12.031383+00:00",
+    "timestamp": "2026-08-31T18:28:44.404526+00:00",
     "remediation_status": "not_applicable"
   },
   {
@@ -122,7 +122,7 @@
     "vulnerable": false,
     "evidence": "Header \"Content-Security-Policy\" is present: default-src 'self'",
     "recommendation": "Set a Content-Security-Policy header on all responses to reduce the impact of injected scripts and restrict allowed content sources.",
-    "timestamp": "2026-08-31T18:07:12.033571+00:00",
+    "timestamp": "2026-08-31T18:28:44.406838+00:00",
     "remediation_status": "not_applicable"
   },
   {
@@ -140,7 +140,7 @@
     "vulnerable": false,
     "evidence": "Header \"Strict-Transport-Security\" is present: max-age=31536000; includeSubDomains",
     "recommendation": "Set a Strict-Transport-Security header to enforce HTTPS once the application is deployed behind TLS.",
-    "timestamp": "2026-08-31T18:07:12.035542+00:00",
+    "timestamp": "2026-08-31T18:28:44.409116+00:00",
     "remediation_status": "not_applicable"
   },
   {
@@ -158,7 +158,7 @@
     "vulnerable": false,
     "evidence": "Header \"X-Content-Type-Options\" is present: nosniff",
     "recommendation": "Set \"X-Content-Type-Options: nosniff\" on all responses to prevent browsers from MIME-sniffing responses away from their declared content type.",
-    "timestamp": "2026-08-31T18:07:12.037398+00:00",
+    "timestamp": "2026-08-31T18:28:44.411375+00:00",
     "remediation_status": "not_applicable"
   },
   {
@@ -176,7 +176,7 @@
     "vulnerable": false,
     "evidence": "Response did not contain \"saved_to\".",
     "recommendation": "Enforce an explicit file extension and content-type allowlist, validate actual file content (magic bytes) rather than trusting the client-supplied filename or Content-Type header, and store uploads outside the web root with randomized, non-attacker-controlled filenames.",
-    "timestamp": "2026-08-31T18:07:12.040792+00:00",
+    "timestamp": "2026-08-31T18:28:44.415588+00:00",
     "remediation_status": "not_applicable"
   },
   {
@@ -194,7 +194,7 @@
     "vulnerable": false,
     "evidence": "Response did not contain \"PRETTY_NAME\".",
     "recommendation": "Disable external entity resolution and external DTD loading in the XML parser configuration (e.g. resolve_entities=False in lxml, or use a hardened parser such as defusedxml), instead of trusting entity declarations found in client-supplied XML.",
-    "timestamp": "2026-08-31T18:07:12.044603+00:00",
+    "timestamp": "2026-08-31T18:28:44.418997+00:00",
     "remediation_status": "not_applicable"
   },
   {
@@ -212,7 +212,7 @@
     "vulnerable": false,
     "evidence": "Response did not contain \"NB_CMD_INJECTION_SUCCESS\".",
     "recommendation": "Never concatenate user input directly into shell commands or execute subprocesses with shell=True. Use parameterized APIs that accept arguments as a list, and validate inputs against a strict allowlist (e.g. valid IP addresses).",
-    "timestamp": "2026-08-31T18:07:12.046818+00:00",
+    "timestamp": "2026-08-31T18:28:44.421931+00:00",
     "remediation_status": "not_applicable"
   },
   {
@@ -230,7 +230,7 @@
     "vulnerable": false,
     "evidence": "Response did not contain \"root:\".",
     "recommendation": "Strip directory traversal sequences using secure filename sanitization, resolve canonical absolute paths, and verify the resulting path is strictly confined within the intended root storage directory boundary.",
-    "timestamp": "2026-08-31T18:07:12.050557+00:00",
+    "timestamp": "2026-08-31T18:28:44.427594+00:00",
     "remediation_status": "not_applicable"
   },
   {
@@ -248,7 +248,7 @@
     "vulnerable": false,
     "evidence": "Header \"Access-Control-Allow-Origin\" does not contain \"https://evil-attacker.com\" (actual: \"\").",
     "recommendation": "Avoid dynamically reflecting untrusted Origin headers. Enforce an explicit allowlist of trusted origins, and avoid setting Access-Control-Allow-Credentials to true for untrusted or wildcard origins.",
-    "timestamp": "2026-08-31T18:07:12.052896+00:00",
+    "timestamp": "2026-08-31T18:28:44.430599+00:00",
     "remediation_status": "not_applicable"
   }
 ]

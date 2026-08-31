@@ -2,6 +2,10 @@
 
 Custom Application Security Testing Rules, Vulnerability Detection, Automated Remediation Validation & Central AppSec Dashboard — built as an 8-week internship project for the No Breach Training Hub Cybersecurity Team.
 
+<p align="center">
+  <img src="docs/images/dashboard-overview.png" alt="NoBreach Rulesmith Dashboard" width="100%">
+</p>
+
 ---
 
 ## What This Is
@@ -68,7 +72,7 @@ Start the full environment (Vulnerable API, Secure API, Internal Service, and We
 
 ```bash
 git clone <repo-url>
-cd nobreach-appsec-rulesmith-AI
+cd nobreach-appsec-rulesmith
 docker compose up -d --build
 ```
 
@@ -84,12 +88,41 @@ docker compose up -d --build
 
 The web dashboard provides an executive and operational interface for the platform:
 
-- **Executive Overview (`/`)**: Severity breakdown doughnut chart, OWASP Top 10 radar coverage map, and key security KPIs.
-- **Scan Console (`/scan`)**: Target switcher (`:8080` vs `:8081`) with real-time DAST and SAST scanning and animated results tables.
-- **Findings Inspector (`/findings`)**: Interactive finding cards with severity/source filters, HTTP evidence viewer, and remediation guidance.
-- **Remediation Tracker (`/remediation`)**: Live Before/After scorecard tracking all 17 detection checks with a 100% verification meter.
-- **Rule Pack Browser (`/rules`)**: Catalog of all 14 DAST + 3 SAST rules with an embedded YAML syntax viewer.
-- **1-Click Report Export**: Download fresh, styled HTML or Markdown assessment reports directly from the top navigation bar.
+### 1. Executive Overview (`/`)
+Severity breakdown doughnut chart, OWASP Top 10 radar coverage map, and key security KPIs:
+<p align="center">
+  <img src="docs/images/dashboard-overview.png" alt="Executive Overview" width="100%">
+</p>
+
+### 2. Scan Console (`/scan`)
+Interactive target switcher (`:8080` vs `:8081`) with real-time DAST and SAST execution:
+<p align="center">
+  <img src="docs/images/scan-console.png" alt="Scan Console" width="100%">
+</p>
+
+### 3. Findings Inspector (`/findings`)
+Interactive finding cards with severity/source filters, HTTP evidence viewer, and remediation guidance:
+<p align="center">
+  <img src="docs/images/findings-inspector.png" alt="Findings Inspector" width="100%">
+</p>
+
+### 4. Remediation Tracker (`/remediation`)
+Live Before/After scorecard tracking all 17 detection checks with a 100% verification meter:
+<p align="center">
+  <img src="docs/images/remediation-tracker.png" alt="Remediation Tracker" width="100%">
+</p>
+
+### 5. Rule Pack Browser (`/rules`)
+Catalog of all 14 DAST + 3 SAST rules with an embedded YAML syntax viewer:
+<p align="center">
+  <img src="docs/images/rule-browser.png" alt="Rule Pack Browser" width="100%">
+</p>
+
+### 6. Dynamic Assessment Report (`reports/`)
+Download fresh, styled HTML or Markdown assessment reports directly from the top navigation bar:
+<p align="center">
+  <img src="docs/images/assessment-report.png" alt="Assessment Report" width="100%">
+</p>
 
 ---
 
