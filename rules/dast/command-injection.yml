@@ -1,0 +1,17 @@
+- id: NB-APPSEC-012
+  name: OS Command Injection via System Ping Endpoint
+  category: Injection
+  severity: Critical
+  method: POST
+  path: /system/ping
+  auth: none
+  body:
+    host: "127.0.0.1; echo NB_CMD_INJECTION_SUCCESS"
+  check_type: response_indicator
+  expected_indicator: "NB_CMD_INJECTION_SUCCESS"
+  owasp: A03:2021
+  cwe: CWE-78
+  recommendation: >
+    Never concatenate user input directly into shell commands or execute
+    subprocesses with shell=True. Use parameterized APIs that accept arguments
+    as a list, and validate inputs against a strict allowlist (e.g. valid IP addresses).

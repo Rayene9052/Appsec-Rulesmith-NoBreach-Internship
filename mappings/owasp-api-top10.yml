@@ -11,6 +11,7 @@ API1:2023:
   risk: Critical
   platform_findings:
     - Broken Object Level Authorization (IDOR) — KB-001 / NB-APPSEC-001
+    - Path / Directory Traversal — KB-013 / NB-APPSEC-013
 
 API2:2023:
   name: Broken Authentication
@@ -67,3 +68,4 @@ API8:2023:
     - Missing / Misconfigured Security Headers — KB-009 / NB-APPSEC-007/008/009
     - XML External Entity Injection (XXE) — KB-010 / NB-APPSEC-011
     - Insecure Deserialization — KB-011 / nb-insecure-deserialization-pickle
+    - CORS Misconfiguration — KB-014 / NB-APPSEC-014

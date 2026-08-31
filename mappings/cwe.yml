@@ -144,3 +144,40 @@ CWE-502:
   cvss_vector: AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
   platform_findings:
     - Insecure Deserialization — KB-011
+
+CWE-78:
+  name: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')
+  description: >
+    The software constructs all or part of an OS command using externally-influenced
+    input from an upstream component, but it does not neutralize or incorrectly
+    neutralizes special elements that could modify the intended command when it is
+    sent to a downstream component.
+  cvss_base_score: 9.8
+  cvss_vector: AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+  platform_findings:
+    - OS Command Injection — KB-012
+
+CWE-22:
+  name: Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal')
+  description: >
+    The software uses external input to construct a pathname that is intended to
+    identify a file or directory that is located underneath a restricted parent
+    directory, but the software does not properly neutralize special elements
+    such as '..' sequences that can resolve to a location that is outside of the
+    restricted directory.
+  cvss_base_score: 7.5
+  cvss_vector: AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+  platform_findings:
+    - Path / Directory Traversal — KB-013
+
+CWE-942:
+  name: Permissive Cross-Domain Policy with Untrusted Domains
+  description: >
+    The web application uses an overly permissive Cross-Origin Resource Sharing
+    (CORS) policy or dynamically reflects arbitrary untrusted Origin headers with
+    credential support enabled, allowing untrusted domains to make cross-domain
+    requests and read sensitive responses.
+  cvss_base_score: 6.5
+  cvss_vector: AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N
+  platform_findings:
+    - CORS Misconfiguration — KB-014

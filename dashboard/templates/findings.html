@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% set active_page = 'findings' %}
+
+{% block title %}Findings Inspector | NoBreach Rulesmith{% endblock %}
+{% block title_header %}Findings Inspector{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Filters -->
+    <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-lg mb-6">
+        <div class="flex items-center space-x-2 text-slate-300">
+            <span class="text-xl">🔍</span>
+            <span class="font-medium" id="visible-count">Showing {{ (findings|length) if findings else 0 }} findings</span>
+        </div>
+        
+        <div class="flex flex-wrap gap-3">
+            <select id="filter-severity" class="bg-slate-700 border border-slate-600 text-sm rounded-lg px-3 py-2 text-gray-200 focus:ring-cyan-500 focus:border-cyan-500 outline-none">
+                <option value="all">Severity: All</option>
+                <option value="critical">Critical</option>
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+            </select>
+            
+            <select id="filter-source" class="bg-slate-700 border border-slate-600 text-sm rounded-lg px-3 py-2 text-gray-200 focus:ring-cyan-500 focus:border-cyan-500 outline-none">
+                <option value="all">Source: All</option>
+                <option value="dast">DAST</option>
+                <option value="sast">SAST</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Findings List -->
+    <div class="space-y-3" id="findings-container">
+        {% if findings %}
+            {% for f in findings %}
+            <div class="finding-card bg-slate-700 rounded-lg border border-slate-600/50 shadow overflow-hidden transition-all duration-200" 
+                 data-severity="{{ f.severity|lower }}" 
+                 data-source="{{ f.source|lower|default('dast') }}">
+                
+                <!-- Header (Clickable) -->
+                <div class="p-4 cursor-pointer hover:bg-slate-600/50 flex flex-wrap items-center justify-between gap-4 finding-toggle">
+                    <div class="flex items-center space-x-4 flex-1 min-w-0">
+                        <div class="w-24 flex-shrink-0">
+                            {% if (f.severity|lower) == 'critical' %}
+                            <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-red-500/20 text-red-400 border border-red-500/30 w-full text-center inline-block">Critical</span>
+                            {% elif (f.severity|lower) == 'high' %}
+                            <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-orange-500/20 text-orange-400 border border-orange-500/30 w-full text-center inline-block">High</span>
+                            {% elif (f.severity|lower) == 'medium' %}
+                            <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 w-full text-center inline-block">Medium</span>
+                            {% elif (f.severity|lower) == 'low' %}
+                            <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-400 border border-blue-500/30 w-full text-center inline-block">Low</span>
+                            {% else %}
+                            <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-500/20 text-slate-300 border border-slate-500/30 w-full text-center inline-block">{{ f.severity }}</span>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="font-mono text-xs text-slate-400 w-28 truncate">{{ f.rule_id }}</div>
+                        <div class="font-semibold text-gray-100 flex-1 truncate">{{ f.title }}</div>
+                        <div class="font-mono text-xs text-cyan-300 w-48 truncate hidden md:block">{{ f.endpoint | default(f.path) }}</div>
+                    </div>
+                    
+                    <div class="flex items-center space-x-2 text-slate-400">
+                        <span class="text-xs border border-slate-600 rounded px-2 py-0.5">{{ f.source|upper|default('DAST') }}</span>
+                        <svg class="w-5 h-5 transform transition-transform duration-200 expand-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </div>
+                </div>
+                
+                <!-- Expanded Detail -->
+                <div class="finding-detail hidden border-t border-slate-600/50 bg-slate-750/50 p-5 space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Evidence -->
+                        <div>
+                            <h4 class="text-sm font-medium text-slate-300 mb-2 flex items-center">
+                                <span class="mr-2">🔎</span> Evidence
+                            </h4>
+                            <div class="bg-slate-900 rounded p-3 text-xs font-mono text-slate-300 overflow-x-auto border border-slate-800 h-32 whitespace-pre-wrap">{{ f.evidence | default('No evidence provided.') }}</div>
+                        </div>
+                        
+                        <!-- Details & Recommendation -->
+                        <div class="space-y-4">
+                            <div>
+                                <h4 class="text-sm font-medium text-slate-300 mb-2 flex items-center">
+                                    <span class="mr-2">💡</span> Recommendation
+                                </h4>
+                                <p class="text-sm text-slate-400 bg-slate-800 rounded p-3 border border-slate-700">{{ f.recommendation | default('No specific recommendation provided.') }}</p>
+                            </div>
+                            
+                            <div class="flex flex-wrap gap-2">
+                                {% if f.category %}
+                                <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-slate-800 text-purple-400 border border-purple-500/20">
+                                    Cat: {{ f.category }}
+                                </span>
+                                {% endif %}
+                                {% if f.owasp %}
+                                <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-slate-800 text-cyan-400 border border-cyan-500/20">
+                                    {{ f.owasp }}
+                                </span>
+                                {% endif %}
+                                {% if f.cwe %}
+                                <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-slate-800 text-teal-400 border border-teal-500/20">
+                                    {{ f.cwe }}
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="text-center py-12 bg-slate-700/50 rounded-xl border border-slate-600 border-dashed">
+                <span class="text-4xl">😴</span>
+                <h3 class="text-lg font-medium text-slate-300 mt-4">No findings available</h3>
+                <p class="text-slate-500 text-sm mt-1">Run a scan to populate this view.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const sevFilter = document.getElementById('filter-severity');
+        const srcFilter = document.getElementById('filter-source');
+        const cards = document.querySelectorAll('.finding-card');
+        const countDisplay = document.getElementById('visible-count');
+
+        const toggles = document.querySelectorAll('.finding-toggle');
+        toggles.forEach(toggle => {
+            toggle.addEventListener('click', function() {
+                const detail = this.nextElementSibling;
+                const icon = this.querySelector('.expand-icon');
+                
+                if (detail.classList.contains('hidden')) {
+                    detail.classList.remove('hidden');
+                    icon.classList.add('rotate-180');
+                } else {
+                    detail.classList.add('hidden');
+                    icon.classList.remove('rotate-180');
+                }
+            });
+        });
+
+        const filterFindings = () => {
+            const sev = sevFilter.value.toLowerCase();
+            const src = srcFilter.value.toLowerCase();
+            let visible = 0;
+            
+            cards.forEach(card => {
+                const cardSev = card.dataset.severity;
+                const cardSrc = card.dataset.source;
+                
+                const sevMatch = sev === 'all' || sev === cardSev;
+                const srcMatch = src === 'all' || src === cardSrc;
+                
+                if (sevMatch && srcMatch) {
+                    card.style.display = '';
+                    visible++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+            countDisplay.textContent = `Showing ${visible} finding${visible !== 1 ? 's' : ''}`;
+        };
+
+        sevFilter.addEventListener('change', filterFindings);
+        srcFilter.addEventListener('change', filterFindings);
+    });
+</script>
+{% endblock %}

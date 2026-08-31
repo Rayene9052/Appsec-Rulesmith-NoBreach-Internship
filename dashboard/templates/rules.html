@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% set active_page = 'rules' %}
+
+{% block title %}Rule Pack Browser | NoBreach Rulesmith{% endblock %}
+{% block title_header %}Rule Pack Browser{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Tabs -->
+    <div class="flex border-b border-slate-700 mb-6">
+        <button id="tab-dast" class="px-6 py-3 text-sm font-medium border-b-2 border-cyan-400 text-cyan-400 focus:outline-none rule-tab">
+            DAST Rules (14)
+        </button>
+        <button id="tab-sast" class="px-6 py-3 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-500 focus:outline-none rule-tab">
+            SAST Rules (3)
+        </button>
+    </div>
+
+    <!-- Rules Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="rules-grid">
+        {% if rules %}
+            {% for rule in rules %}
+            <div class="rule-card bg-slate-700 rounded-xl shadow-lg border border-slate-600/50 flex flex-col h-full transition-transform hover:-translate-y-1" data-source="{{ rule.source|lower|default('dast') }}">
+                <!-- Card Header -->
+                <div class="p-5 border-b border-slate-600/50 bg-slate-750/30 rounded-t-xl relative overflow-hidden">
+                    <!-- Accent bar -->
+                    <div class="absolute top-0 left-0 w-full h-1 bg-cyan-500/50"></div>
+                    
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="px-2 py-1 bg-cyan-500/20 text-cyan-400 text-xs font-mono rounded border border-cyan-500/30">
+                            {{ rule.id }}
+                        </span>
+                        
+                        {% if (rule.severity|lower) == 'critical' %}
+                        <span class="px-2 py-0.5 rounded text-xs font-bold bg-red-500/20 text-red-400 border border-red-500/30">Critical</span>
+                        {% elif (rule.severity|lower) == 'high' %}
+                        <span class="px-2 py-0.5 rounded text-xs font-bold bg-orange-500/20 text-orange-400 border border-orange-500/30">High</span>
+                        {% elif (rule.severity|lower) == 'medium' %}
+                        <span class="px-2 py-0.5 rounded text-xs font-bold bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">Medium</span>
+                        {% else %}
+                        <span class="px-2 py-0.5 rounded text-xs font-bold bg-blue-500/20 text-blue-400 border border-blue-500/30">Low</span>
+                        {% endif %}
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-100 leading-tight mt-3">{{ rule.name }}</h3>
+                </div>
+                
+                <!-- Card Body -->
+                <div class="p-5 flex-1 space-y-3">
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-slate-400">Category:</span>
+                        <span class="text-gray-200 font-medium">{{ rule.category }}</span>
+                    </div>
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-slate-400">Method:</span>
+                        <span class="text-gray-200 font-mono text-xs">{{ rule.check_type }}</span>
+                    </div>
+                    {% if rule.path %}
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-slate-400">Target:</span>
+                        <span class="text-cyan-300 font-mono text-xs truncate max-w-[60%]">{{ rule.path }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="pt-3 flex flex-wrap gap-2 mt-auto">
+                        {% if rule.owasp %}
+                        <span class="px-2 py-1 text-xs bg-slate-800 text-slate-300 rounded border border-slate-600">{{ rule.owasp }}</span>
+                        {% endif %}
+                        {% if rule.cwe %}
+                        <span class="px-2 py-1 text-xs bg-slate-800 text-slate-300 rounded border border-slate-600">{{ rule.cwe }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- View YAML Button -->
+                <div class="p-4 border-t border-slate-600/50">
+                    <button class="w-full py-2 bg-slate-800 hover:bg-slate-600 text-cyan-400 text-sm font-medium rounded transition-colors flex items-center justify-center border border-slate-600 yaml-toggle">
+                        <span class="mr-2">📄</span> View YAML Config
+                    </button>
+                    <!-- Hidden YAML content -->
+                    <div class="hidden mt-3 yaml-content">
+                        <pre class="bg-slate-900 rounded p-3 text-xs text-slate-300 font-mono overflow-x-auto border border-slate-800 max-h-64 overflow-y-auto"><code class="language-yaml">{{ rule.yaml_content | default('No YAML content available') }}</code></pre>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-span-full text-center py-12 bg-slate-700/30 rounded-xl border border-slate-600 border-dashed">
+                <span class="text-4xl">📭</span>
+                <h3 class="text-lg font-medium text-slate-300 mt-4">No rules loaded</h3>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const tabDast = document.getElementById('tab-dast');
+        const tabSast = document.getElementById('tab-sast');
+        const cards = document.querySelectorAll('.rule-card');
+        
+        const updateCounts = () => {
+            let dastCount = 0;
+            let sastCount = 0;
+            cards.forEach(card => {
+                if(card.dataset.source === 'sast') sastCount++;
+                else dastCount++;
+            });
+            tabDast.textContent = `DAST Rules (${dastCount})`;
+            tabSast.textContent = `SAST Rules (${sastCount})`;
+        };
+        updateCounts();
+
+        const switchTab = (source) => {
+            if (source === 'dast') {
+                tabDast.className = 'px-6 py-3 text-sm font-medium border-b-2 border-cyan-400 text-cyan-400 focus:outline-none rule-tab';
+                tabSast.className = 'px-6 py-3 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-500 focus:outline-none rule-tab';
+            } else {
+                tabSast.className = 'px-6 py-3 text-sm font-medium border-b-2 border-cyan-400 text-cyan-400 focus:outline-none rule-tab';
+                tabDast.className = 'px-6 py-3 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-500 focus:outline-none rule-tab';
+            }
+            
+            cards.forEach(card => {
+                const cardSrc = card.dataset.source || 'dast';
+                if (cardSrc === source) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        };
+        
+        switchTab('dast');
+
+        tabDast.addEventListener('click', () => switchTab('dast'));
+        tabSast.addEventListener('click', () => switchTab('sast'));
+
+        const toggles = document.querySelectorAll('.yaml-toggle');
+        toggles.forEach(toggle => {
+            toggle.addEventListener('click', function() {
+                const content = this.nextElementSibling;
+                if (content.classList.contains('hidden')) {
+                    content.classList.remove('hidden');
+                    this.innerHTML = '<span class="mr-2">🔽</span> Hide YAML Config';
+                } else {
+                    content.classList.add('hidden');
+                    this.innerHTML = '<span class="mr-2">📄</span> View YAML Config';
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

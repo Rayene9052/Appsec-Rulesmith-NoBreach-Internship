@@ -5,17 +5,17 @@
     "title": "Broken Object Level Authorization on Profile Endpoint (IDOR)",
     "endpoint": "/profile/2",
     "method": "GET",
-    "status_code": 403,
+    "status_code": 200,
     "severity": "High",
     "category": "Access Control",
     "owasp": "A01:2021",
     "owasp_api": "API1:2023",
     "cwe": "CWE-639",
-    "vulnerable": false,
-    "evidence": "Response did not contain \"bob@example.com\".",
+    "vulnerable": true,
+    "evidence": "Response contained \"bob@example.com\", indicating the check condition was met.",
     "recommendation": "Verify the authenticated user's ID matches the requested user_id before returning profile data, instead of only checking that a token is present and valid.",
-    "timestamp": "2026-08-30T23:50:51.285360+00:00",
-    "remediation_status": "not_applicable"
+    "timestamp": "2026-08-30T23:44:27.571593+00:00",
+    "remediation_status": "open"
   },
   {
     "rule_id": "NB-APPSEC-002",
@@ -23,17 +23,17 @@
     "title": "Broken Access Control on Admin Endpoint",
     "endpoint": "/admin/users",
     "method": "GET",
-    "status_code": 401,
+    "status_code": 200,
     "severity": "Critical",
     "category": "Access Control",
     "owasp": "A01:2021",
     "owasp_api": null,
     "cwe": "CWE-862",
-    "vulnerable": false,
-    "evidence": "Response did not contain \"password\".",
+    "vulnerable": true,
+    "evidence": "Response contained \"password\", indicating the check condition was met.",
     "recommendation": "Require a valid admin-role token before returning this endpoint's data. Returning sensitive fields like passwords with no authentication at all is a critical finding.",
-    "timestamp": "2026-08-30T23:50:51.292197+00:00",
-    "remediation_status": "not_applicable"
+    "timestamp": "2026-08-30T23:44:27.583510+00:00",
+    "remediation_status": "open"
   },
   {
     "rule_id": "NB-APPSEC-003",
@@ -47,11 +47,11 @@
     "owasp": "A01:2021",
     "owasp_api": "API3:2023",
     "cwe": "CWE-915",
-    "vulnerable": false,
-    "evidence": "Response did not contain \"\"role\": \"admin\"\".",
+    "vulnerable": true,
+    "evidence": "Response contained \"\"role\": \"admin\"\", indicating the check condition was met.",
     "recommendation": "Apply an explicit allowlist of fields a client is permitted to update (e.g. email, display name) instead of merging the entire request body into the stored record.",
-    "timestamp": "2026-08-30T23:50:51.300123+00:00",
-    "remediation_status": "not_applicable"
+    "timestamp": "2026-08-30T23:44:27.593876+00:00",
+    "remediation_status": "open"
   },
   {
     "rule_id": "NB-APPSEC-004",
@@ -59,17 +59,17 @@
     "title": "Server-Side Request Forgery via Webhook Preview",
     "endpoint": "/webhook/preview",
     "method": "POST",
-    "status_code": 400,
+    "status_code": 200,
     "severity": "High",
     "category": "Request Forgery",
     "owasp": "A10:2021",
     "owasp_api": null,
     "cwe": "CWE-918",
-    "vulnerable": false,
-    "evidence": "Response did not contain \"origin\".",
+    "vulnerable": true,
+    "evidence": "Response contained \"origin\", indicating the check condition was met.",
     "recommendation": "Restrict outbound requests to an explicit allowlist of external hosts, block requests to private/internal IP ranges, and never let a client fully control the target URL of a server-side request.",
-    "timestamp": "2026-08-30T23:50:51.307260+00:00",
-    "remediation_status": "not_applicable"
+    "timestamp": "2026-08-30T23:44:27.645008+00:00",
+    "remediation_status": "open"
   },
   {
     "rule_id": "NB-APPSEC-005",
@@ -83,11 +83,11 @@
     "owasp": "A03:2021",
     "owasp_api": null,
     "cwe": "CWE-943",
-    "vulnerable": false,
-    "evidence": "Response did not contain \"admin@nobreach.local\".",
+    "vulnerable": true,
+    "evidence": "Response contained \"admin@nobreach.local\", indicating the check condition was met.",
     "recommendation": "Never evaluate user-controlled input as code or as part of a query expression. Compare filter values as literal strings, or use a parameterized query API if a real database is introduced.",
-    "timestamp": "2026-08-30T23:50:51.315133+00:00",
-    "remediation_status": "not_applicable"
+    "timestamp": "2026-08-30T23:44:27.659274+00:00",
+    "remediation_status": "open"
   },
   {
     "rule_id": "NB-APPSEC-006",
@@ -101,11 +101,11 @@
     "owasp": "A03:2021",
     "owasp_api": null,
     "cwe": "CWE-1336",
-    "vulnerable": false,
-    "evidence": "Response did not contain \"Hello, 49!\".",
+    "vulnerable": true,
+    "evidence": "Response contained \"Hello, 49!\", indicating the check condition was met.",
     "recommendation": "Never splice user input directly into template source. Pass user data in as template *context/data* instead, so it is rendered as a literal value rather than compiled as template syntax.",
-    "timestamp": "2026-08-30T23:50:51.339780+00:00",
-    "remediation_status": "not_applicable"
+    "timestamp": "2026-08-30T23:44:27.672993+00:00",
+    "remediation_status": "open"
   },
   {
     "rule_id": "NB-APPSEC-007",
@@ -119,11 +119,11 @@
     "owasp": "A05:2021",
     "owasp_api": null,
     "cwe": "CWE-1021",
-    "vulnerable": false,
-    "evidence": "Header \"Content-Security-Policy\" is present: default-src 'self'",
+    "vulnerable": true,
+    "evidence": "Response is missing the \"Content-Security-Policy\" security header.",
     "recommendation": "Set a Content-Security-Policy header on all responses to reduce the impact of injected scripts and restrict allowed content sources.",
-    "timestamp": "2026-08-30T23:50:51.349910+00:00",
-    "remediation_status": "not_applicable"
+    "timestamp": "2026-08-30T23:44:27.680830+00:00",
+    "remediation_status": "open"
   },
   {
     "rule_id": "NB-APPSEC-008",
@@ -137,11 +137,11 @@
     "owasp": "A05:2021",
     "owasp_api": null,
     "cwe": "CWE-1021",
-    "vulnerable": false,
-    "evidence": "Header \"Strict-Transport-Security\" is present: max-age=31536000; includeSubDomains",
+    "vulnerable": true,
+    "evidence": "Response is missing the \"Strict-Transport-Security\" security header.",
     "recommendation": "Set a Strict-Transport-Security header to enforce HTTPS once the application is deployed behind TLS.",
-    "timestamp": "2026-08-30T23:50:51.359191+00:00",
-    "remediation_status": "not_applicable"
+    "timestamp": "2026-08-30T23:44:27.705573+00:00",
+    "remediation_status": "open"
   },
   {
     "rule_id": "NB-APPSEC-009",
@@ -155,11 +155,11 @@
     "owasp": "A05:2021",
     "owasp_api": null,
     "cwe": "CWE-1021",
-    "vulnerable": false,
-    "evidence": "Header \"X-Content-Type-Options\" is present: nosniff",
+    "vulnerable": true,
+    "evidence": "Response is missing the \"X-Content-Type-Options\" security header.",
     "recommendation": "Set \"X-Content-Type-Options: nosniff\" on all responses to prevent browsers from MIME-sniffing responses away from their declared content type.",
-    "timestamp": "2026-08-30T23:50:51.368171+00:00",
-    "remediation_status": "not_applicable"
+    "timestamp": "2026-08-30T23:44:27.714927+00:00",
+    "remediation_status": "open"
   },
   {
     "rule_id": "NB-APPSEC-010",
@@ -167,17 +167,17 @@
     "title": "Insecure File Upload Accepts Arbitrary File Type",
     "endpoint": "/upload",
     "method": "POST",
-    "status_code": 400,
+    "status_code": 200,
     "severity": "High",
     "category": "Insecure Design",
     "owasp": "A04:2021",
     "owasp_api": null,
     "cwe": "CWE-434",
-    "vulnerable": false,
-    "evidence": "Response did not contain \"saved_to\".",
+    "vulnerable": true,
+    "evidence": "Response contained \"saved_to\", indicating the check condition was met.",
     "recommendation": "Enforce an explicit file extension and content-type allowlist, validate actual file content (magic bytes) rather than trusting the client-supplied filename or Content-Type header, and store uploads outside the web root with randomized, non-attacker-controlled filenames.",
-    "timestamp": "2026-08-30T23:50:51.380131+00:00",
-    "remediation_status": "not_applicable"
+    "timestamp": "2026-08-30T23:44:27.740164+00:00",
+    "remediation_status": "open"
   },
   {
     "rule_id": "NB-APPSEC-011",
@@ -191,11 +191,11 @@
     "owasp": "A05:2021",
     "owasp_api": null,
     "cwe": "CWE-611",
-    "vulnerable": false,
-    "evidence": "Response did not contain \"PRETTY_NAME\".",
+    "vulnerable": true,
+    "evidence": "Response contained \"PRETTY_NAME\", indicating the check condition was met.",
     "recommendation": "Disable external entity resolution and external DTD loading in the XML parser configuration (e.g. resolve_entities=False in lxml, or use a hardened parser such as defusedxml), instead of trusting entity declarations found in client-supplied XML.",
-    "timestamp": "2026-08-30T23:50:51.392897+00:00",
-    "remediation_status": "not_applicable"
+    "timestamp": "2026-08-30T23:44:27.754039+00:00",
+    "remediation_status": "open"
   },
   {
     "rule_id": "NB-APPSEC-012",
@@ -203,17 +203,17 @@
     "title": "OS Command Injection via System Ping Endpoint",
     "endpoint": "/system/ping",
     "method": "POST",
-    "status_code": 400,
+    "status_code": 200,
     "severity": "Critical",
     "category": "Injection",
     "owasp": "A03:2021",
     "owasp_api": null,
     "cwe": "CWE-78",
-    "vulnerable": false,
-    "evidence": "Response did not contain \"NB_CMD_INJECTION_SUCCESS\".",
+    "vulnerable": true,
+    "evidence": "Response contained \"NB_CMD_INJECTION_SUCCESS\", indicating the check condition was met.",
     "recommendation": "Never concatenate user input directly into shell commands or execute subprocesses with shell=True. Use parameterized APIs that accept arguments as a list, and validate inputs against a strict allowlist (e.g. valid IP addresses).",
-    "timestamp": "2026-08-30T23:50:51.406125+00:00",
-    "remediation_status": "not_applicable"
+    "timestamp": "2026-08-30T23:44:27.768883+00:00",
+    "remediation_status": "open"
   },
   {
     "rule_id": "NB-APPSEC-013",
@@ -221,17 +221,17 @@
     "title": "Path Traversal via File Download Endpoint",
     "endpoint": "/files/download?filename=../../../../etc/passwd",
     "method": "GET",
-    "status_code": 403,
+    "status_code": 200,
     "severity": "High",
     "category": "Access Control",
     "owasp": "A01:2021",
     "owasp_api": null,
     "cwe": "CWE-22",
-    "vulnerable": false,
-    "evidence": "Response did not contain \"root:\".",
+    "vulnerable": true,
+    "evidence": "Response contained \"root:\", indicating the check condition was met.",
     "recommendation": "Strip directory traversal sequences using secure filename sanitization, resolve canonical absolute paths, and verify the resulting path is strictly confined within the intended root storage directory boundary.",
-    "timestamp": "2026-08-30T23:50:51.423126+00:00",
-    "remediation_status": "not_applicable"
+    "timestamp": "2026-08-30T23:44:27.779603+00:00",
+    "remediation_status": "open"
   },
   {
     "rule_id": "NB-APPSEC-014",
@@ -245,10 +245,10 @@
     "owasp": "A05:2021",
     "owasp_api": "API8:2023",
     "cwe": "CWE-942",
-    "vulnerable": false,
-    "evidence": "Header \"Access-Control-Allow-Origin\" does not contain \"https://evil-attacker.com\" (actual: \"\").",
+    "vulnerable": true,
+    "evidence": "Header \"Access-Control-Allow-Origin\" contains \"https://evil-attacker.com\" (actual: \"https://evil-attacker.com\").",
     "recommendation": "Avoid dynamically reflecting untrusted Origin headers. Enforce an explicit allowlist of trusted origins, and avoid setting Access-Control-Allow-Credentials to true for untrusted or wildcard origins.",
-    "timestamp": "2026-08-30T23:50:51.440651+00:00",
-    "remediation_status": "not_applicable"
+    "timestamp": "2026-08-30T23:44:27.789743+00:00",
+    "remediation_status": "open"
   }
 ]

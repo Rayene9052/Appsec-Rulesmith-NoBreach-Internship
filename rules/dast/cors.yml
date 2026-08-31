@@ -1,0 +1,19 @@
+- id: NB-APPSEC-014
+  name: Overly Permissive CORS with Dynamic Origin Reflection
+  category: Security Misconfiguration
+  severity: Medium
+  method: GET
+  path: /cors/data
+  auth: none
+  headers:
+    Origin: https://evil-attacker.com
+  check_type: header_value_contains
+  header_name: Access-Control-Allow-Origin
+  expected_indicator: "https://evil-attacker.com"
+  owasp: A05:2021
+  owasp_api: API8:2023
+  cwe: CWE-942
+  recommendation: >
+    Avoid dynamically reflecting untrusted Origin headers. Enforce an explicit
+    allowlist of trusted origins, and avoid setting Access-Control-Allow-Credentials
+    to true for untrusted or wildcard origins.

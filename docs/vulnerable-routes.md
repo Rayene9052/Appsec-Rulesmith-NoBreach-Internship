@@ -166,6 +166,38 @@ curl -I http://localhost:8080/health
 **Vulnerability:** Missing / Misconfigured Security Headers — `A05:2021`
 / `CWE-1021`.
 
+## 12. `POST /system/ping` — OS Command Injection
+
+Accepts a `host` parameter and interpolates it into a shell command executed with `shell=True`.
+
+```bash
+curl -X POST http://localhost:8080/system/ping \
+  -H "Content-Type: application/json" \
+  -d '{"host": "127.0.0.1; echo NB_CMD_INJECTION_SUCCESS"}'
+```
+
+**Vulnerability:** OS Command Injection — `A03:2021` / `CWE-78`.
+
+## 13. `GET /files/download` — Path / Directory Traversal
+
+Accepts a `filename` query parameter and reads the target file from the filesystem without path canonicalisation or boundary verification.
+
+```bash
+curl "http://localhost:8080/files/download?filename=../../../../etc/passwd"
+```
+
+**Vulnerability:** Path / Directory Traversal — `API1:2023` / `A01:2021` / `CWE-22`.
+
+## 14. `GET /cors/data` — CORS Misconfiguration
+
+Dynamically reflects any client-supplied `Origin` header into `Access-Control-Allow-Origin` and enables `Access-Control-Allow-Credentials: true`.
+
+```bash
+curl http://localhost:8080/cors/data -H "Origin: https://evil-attacker.com" -I
+```
+
+**Vulnerability:** CORS Misconfiguration — `API8:2023` / `A05:2021` / `CWE-942`.
+
 ## Not yet wired to auth
 
 `admin_routes.py` and `search_routes.py` don't check authentication at

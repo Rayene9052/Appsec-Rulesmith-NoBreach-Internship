@@ -128,6 +128,19 @@ def run_rule(rule, target, auth_manager):
         )
         return (not vulnerable), response.status_code, evidence
 
+    if check_type == "header_value_contains":
+        header_name = rule.get("header_name", "Access-Control-Allow-Origin")
+        expected = rule["expected_indicator"]
+        actual = response.headers.get(header_name, "")
+        found = expected in actual
+        vulnerable = found
+        evidence = (
+            f'Header "{header_name}" contains "{expected}" (actual: "{actual}").'
+            if found
+            else f'Header "{header_name}" does not contain "{expected}" (actual: "{actual}").'
+        )
+        return (not vulnerable), response.status_code, evidence
+
     return True, response.status_code, "Unhandled check_type — treated as passed."
 
 

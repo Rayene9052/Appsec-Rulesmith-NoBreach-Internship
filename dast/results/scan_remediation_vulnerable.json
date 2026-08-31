@@ -14,7 +14,7 @@
     "vulnerable": true,
     "evidence": "Response contained \"bob@example.com\", indicating the check condition was met.",
     "recommendation": "Verify the authenticated user's ID matches the requested user_id before returning profile data, instead of only checking that a token is present and valid.",
-    "timestamp": "2026-08-22T11:22:29.094557+00:00",
+    "timestamp": "2026-08-30T23:50:50.490616+00:00",
     "remediation_status": "open"
   },
   {
@@ -32,7 +32,7 @@
     "vulnerable": true,
     "evidence": "Response contained \"password\", indicating the check condition was met.",
     "recommendation": "Require a valid admin-role token before returning this endpoint's data. Returning sensitive fields like passwords with no authentication at all is a critical finding.",
-    "timestamp": "2026-08-22T11:22:29.129671+00:00",
+    "timestamp": "2026-08-30T23:50:50.498465+00:00",
     "remediation_status": "open"
   },
   {
@@ -50,7 +50,7 @@
     "vulnerable": true,
     "evidence": "Response contained \"\"role\": \"admin\"\", indicating the check condition was met.",
     "recommendation": "Apply an explicit allowlist of fields a client is permitted to update (e.g. email, display name) instead of merging the entire request body into the stored record.",
-    "timestamp": "2026-08-22T11:22:29.159681+00:00",
+    "timestamp": "2026-08-30T23:50:50.506675+00:00",
     "remediation_status": "open"
   },
   {
@@ -68,7 +68,7 @@
     "vulnerable": true,
     "evidence": "Response contained \"origin\", indicating the check condition was met.",
     "recommendation": "Restrict outbound requests to an explicit allowlist of external hosts, block requests to private/internal IP ranges, and never let a client fully control the target URL of a server-side request.",
-    "timestamp": "2026-08-22T11:22:29.178679+00:00",
+    "timestamp": "2026-08-30T23:50:50.519413+00:00",
     "remediation_status": "open"
   },
   {
@@ -86,7 +86,7 @@
     "vulnerable": true,
     "evidence": "Response contained \"admin@nobreach.local\", indicating the check condition was met.",
     "recommendation": "Never evaluate user-controlled input as code or as part of a query expression. Compare filter values as literal strings, or use a parameterized query API if a real database is introduced.",
-    "timestamp": "2026-08-22T11:22:29.185325+00:00",
+    "timestamp": "2026-08-30T23:50:50.526697+00:00",
     "remediation_status": "open"
   },
   {
@@ -104,7 +104,7 @@
     "vulnerable": true,
     "evidence": "Response contained \"Hello, 49!\", indicating the check condition was met.",
     "recommendation": "Never splice user input directly into template source. Pass user data in as template *context/data* instead, so it is rendered as a literal value rather than compiled as template syntax.",
-    "timestamp": "2026-08-22T11:22:29.192834+00:00",
+    "timestamp": "2026-08-30T23:50:50.536346+00:00",
     "remediation_status": "open"
   },
   {
@@ -122,7 +122,7 @@
     "vulnerable": true,
     "evidence": "Response is missing the \"Content-Security-Policy\" security header.",
     "recommendation": "Set a Content-Security-Policy header on all responses to reduce the impact of injected scripts and restrict allowed content sources.",
-    "timestamp": "2026-08-22T11:22:29.198623+00:00",
+    "timestamp": "2026-08-30T23:50:50.544244+00:00",
     "remediation_status": "open"
   },
   {
@@ -140,7 +140,7 @@
     "vulnerable": true,
     "evidence": "Response is missing the \"Strict-Transport-Security\" security header.",
     "recommendation": "Set a Strict-Transport-Security header to enforce HTTPS once the application is deployed behind TLS.",
-    "timestamp": "2026-08-22T11:22:29.223124+00:00",
+    "timestamp": "2026-08-30T23:50:50.552206+00:00",
     "remediation_status": "open"
   },
   {
@@ -158,7 +158,7 @@
     "vulnerable": true,
     "evidence": "Response is missing the \"X-Content-Type-Options\" security header.",
     "recommendation": "Set \"X-Content-Type-Options: nosniff\" on all responses to prevent browsers from MIME-sniffing responses away from their declared content type.",
-    "timestamp": "2026-08-22T11:22:29.254344+00:00",
+    "timestamp": "2026-08-30T23:50:50.580153+00:00",
     "remediation_status": "open"
   },
   {
@@ -176,7 +176,7 @@
     "vulnerable": true,
     "evidence": "Response contained \"saved_to\", indicating the check condition was met.",
     "recommendation": "Enforce an explicit file extension and content-type allowlist, validate actual file content (magic bytes) rather than trusting the client-supplied filename or Content-Type header, and store uploads outside the web root with randomized, non-attacker-controlled filenames.",
-    "timestamp": "2026-08-22T11:22:29.273759+00:00",
+    "timestamp": "2026-08-30T23:50:50.599597+00:00",
     "remediation_status": "open"
   },
   {
@@ -194,7 +194,61 @@
     "vulnerable": true,
     "evidence": "Response contained \"PRETTY_NAME\", indicating the check condition was met.",
     "recommendation": "Disable external entity resolution and external DTD loading in the XML parser configuration (e.g. resolve_entities=False in lxml, or use a hardened parser such as defusedxml), instead of trusting entity declarations found in client-supplied XML.",
-    "timestamp": "2026-08-22T11:22:29.285235+00:00",
+    "timestamp": "2026-08-30T23:50:50.630462+00:00",
+    "remediation_status": "open"
+  },
+  {
+    "rule_id": "NB-APPSEC-012",
+    "source": "dast",
+    "title": "OS Command Injection via System Ping Endpoint",
+    "endpoint": "/system/ping",
+    "method": "POST",
+    "status_code": 200,
+    "severity": "Critical",
+    "category": "Injection",
+    "owasp": "A03:2021",
+    "owasp_api": null,
+    "cwe": "CWE-78",
+    "vulnerable": true,
+    "evidence": "Response contained \"NB_CMD_INJECTION_SUCCESS\", indicating the check condition was met.",
+    "recommendation": "Never concatenate user input directly into shell commands or execute subprocesses with shell=True. Use parameterized APIs that accept arguments as a list, and validate inputs against a strict allowlist (e.g. valid IP addresses).",
+    "timestamp": "2026-08-30T23:50:50.655043+00:00",
+    "remediation_status": "open"
+  },
+  {
+    "rule_id": "NB-APPSEC-013",
+    "source": "dast",
+    "title": "Path Traversal via File Download Endpoint",
+    "endpoint": "/files/download?filename=../../../../etc/passwd",
+    "method": "GET",
+    "status_code": 200,
+    "severity": "High",
+    "category": "Access Control",
+    "owasp": "A01:2021",
+    "owasp_api": null,
+    "cwe": "CWE-22",
+    "vulnerable": true,
+    "evidence": "Response contained \"root:\", indicating the check condition was met.",
+    "recommendation": "Strip directory traversal sequences using secure filename sanitization, resolve canonical absolute paths, and verify the resulting path is strictly confined within the intended root storage directory boundary.",
+    "timestamp": "2026-08-30T23:50:50.685918+00:00",
+    "remediation_status": "open"
+  },
+  {
+    "rule_id": "NB-APPSEC-014",
+    "source": "dast",
+    "title": "Overly Permissive CORS with Dynamic Origin Reflection",
+    "endpoint": "/cors/data",
+    "method": "GET",
+    "status_code": 200,
+    "severity": "Medium",
+    "category": "Security Misconfiguration",
+    "owasp": "A05:2021",
+    "owasp_api": "API8:2023",
+    "cwe": "CWE-942",
+    "vulnerable": true,
+    "evidence": "Header \"Access-Control-Allow-Origin\" contains \"https://evil-attacker.com\" (actual: \"https://evil-attacker.com\").",
+    "recommendation": "Avoid dynamically reflecting untrusted Origin headers. Enforce an explicit allowlist of trusted origins, and avoid setting Access-Control-Allow-Credentials to true for untrusted or wildcard origins.",
+    "timestamp": "2026-08-30T23:50:50.716117+00:00",
     "remediation_status": "open"
   }
 ]

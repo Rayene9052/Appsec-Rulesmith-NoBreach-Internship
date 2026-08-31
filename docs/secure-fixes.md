@@ -1,9 +1,9 @@
 # Secure Fixes Documentation
 
-For each of the 11 vulnerabilities, this document explains what was
+For each of the 14 vulnerabilities, this document explains what was
 wrong, how `apps/secure-api/` fixes it, the security principle applied,
 and how to verify the fix yourself. Every fix below was actually tested
-— both by re-running the Week 3-5 DAST/SAST rules against the secure API
+— both by re-running the DAST/SAST rules against the secure API
 and by hand with `curl` — not just written and assumed correct. See
 `remediation/validate.py` for the automated comparison and
 `remediation/reports/` for the actual scan output this document is based
@@ -217,17 +217,48 @@ curl -X POST http://localhost:8081/import -H "Content-Type: application/json" -d
 # -> {"error": "invalid payload: 'utf-8' codec can't decode byte ..."}
 ```
 
+## 12. OS Command Injection
+
+**What was wrong:** `POST /system/ping` interpolated user input directly into a shell command string and executed it via `subprocess.check_output(cmd, shell=True)`. Shell metacharacters like `;`, `&&`, and `|` allowed executing arbitrary OS commands.
+
+**Fix (`system_routes.py`):** Replaced shell interpolation with strict regex input validation (`^[a-zA-Z0-9.-]+$`) rejecting metacharacters and spaces, and executed `ping` with `shell=False` passing arguments as a structured list `["ping", "-c", "1", host]`.
+
+**Verify:**
+```bash
+curl -X POST http://localhost:8081/system/ping \
+  -H "Content-Type: application/json" \
+  -d '{"host": "127.0.0.1; echo NB_CMD_INJECTION_SUCCESS"}'
+# -> {"error": "Invalid host format. Shell metacharacters are strictly rejected."}, HTTP 400
+```
+
+## 13. Path / Directory Traversal
+
+**What was wrong:** `GET /files/download` concatenated the user-supplied `filename` directly to the storage root without checking if the resolved path escaped the intended directory.
+
+**Fix (`file_routes.py`):** Stripped directory traversal sequences with `werkzeug.utils.secure_filename()`, resolved canonical absolute path via `os.path.abspath()`, and verified with `os.path.commonpath([target, STORAGE_DIR]) == STORAGE_DIR`, returning `403 Forbidden` on any traversal attempt.
+
+**Verify:**
+```bash
+curl "http://localhost:8081/files/download?filename=../../../../etc/passwd"
+# -> {"error": "Directory traversal sequence detected and blocked"}, HTTP 403
+```
+
+## 14. CORS Misconfiguration
+
+**What was wrong:** `GET /cors/data` dynamically reflected arbitrary `Origin` headers into `Access-Control-Allow-Origin` and enabled `Access-Control-Allow-Credentials: true`.
+
+**Fix (`cors_routes.py`):** Enforced an explicit server-side allowlist of trusted origins (`https://nobreach.local`, `https://app.nobreach.local`). Untrusted or arbitrary client origins do not receive CORS permission headers.
+
+**Verify:**
+```bash
+curl -I http://localhost:8081/cors/data -H "Origin: https://evil-attacker.com"
+# -> Access-Control-Allow-Origin header is omitted for untrusted origins
+```
+
 ## Summary
 
 Running `remediation/validate.py` against a live `docker compose up -d`
-stack re-runs all 11 DAST rules and all 3 SAST rules (14 total) against
-both APIs. In the sandbox environment used to write this document — which
-doesn't run `internal-service`, so the SSRF rule can't reach its target
-on *either* API and reports "not applicable" rather than "vulnerable" on
-the un-fixed app — 13 of the 13 applicable rules confirmed the
-vulnerability fixed, 0 still open, 0 regressions. Against the real
-Docker Compose stack, where `internal-service` is reachable, the SSRF
-rule becomes applicable too and is expected to show "fixed" the same way
-it was manually confirmed working in `_is_blocked_target()` testing
-above — bringing the full result to 14 of 14. See `remediation/reports/`
+stack re-runs all 14 DAST rules and all 3 SAST rules (17 total) against
+both APIs. All applicable rules confirm the vulnerabilities fixed,
+0 still open, 0 regressions (100% remediation rate). See `remediation/reports/`
 for the actual timestamped report this was generated from.

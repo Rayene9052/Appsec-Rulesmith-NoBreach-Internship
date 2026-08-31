@@ -14,6 +14,7 @@ A01:2021:
     - Broken Object Level Authorization (IDOR) — KB-001 / NB-APPSEC-001
     - Broken Access Control (missing admin authorization) — KB-002 / NB-APPSEC-002
     - Mass Assignment — KB-003 / NB-APPSEC-003
+    - Path / Directory Traversal — KB-013 / NB-APPSEC-013
 
 A02:2021:
   name: Cryptographic Failures
@@ -36,6 +37,7 @@ A03:2021:
   platform_findings:
     - NoSQL Injection — KB-006 / NB-APPSEC-005
     - Server-Side Template Injection (SSTI) — KB-007 / NB-APPSEC-006
+    - OS Command Injection — KB-012 / NB-APPSEC-012
 
 A04:2021:
   name: Insecure Design
@@ -59,6 +61,7 @@ A05:2021:
   platform_findings:
     - Missing / Misconfigured Security Headers — KB-009 / NB-APPSEC-007, NB-APPSEC-008, NB-APPSEC-009
     - XML External Entity Injection (XXE) — KB-010 / NB-APPSEC-011
+    - CORS Misconfiguration — KB-014 / NB-APPSEC-014
 
 A08:2021:
   name: Software and Data Integrity Failures

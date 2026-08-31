@@ -2,161 +2,125 @@
 
 ## 1. Purpose of This Document
 
-This document defines the technical architecture of NoBreach AppSec
-Rulesmith as designed in Week 1. It is the reference point for all
-subsequent weeks — later work should extend this design rather than
-improvise around it.
+This document defines the technical architecture of NoBreach AppSec Rulesmith. It serves as the comprehensive architectural reference for the entire platform, outlining component boundaries, data flow, rule formats, and design principles.
+
+---
 
 ## 2. High-Level Architecture
 
+```text
+                         ┌────────────────────────────────────────┐
+                         │       Docker Compose Environment       │
+                         │  - vulnerable-api (Port 8080)          │
+                         │  - secure-api (Port 8081)              │
+                         │  - internal-service (HTTPBin)          │
+                         │  - dashboard (Port 5050)               │
+                         └───────────────────┬────────────────────┘
+                                             │ HTTP / Volume Mounts
+                     ┌───────────────────────┴───────────────────────┐
+                     │                                               │
+            ┌────────▼────────┐                            ┌─────────▼────────┐
+            │ DAST Rule Engine│                            │  SAST Rule Pack  │
+            │ (dast/*.py)     │                            │ (rules/sast/*)   │
+            │ 14 YAML Rules   │                            │ 3 Semgrep Rules  │
+            └────────┬────────┘                            └─────────┬────────┘
+                     │                                               │
+                     └───────────────────────┬───────────────────────┘
+                                             │
+                                 ┌───────────▼────────────┐
+                                 │   Evidence Collector   │
+                                 │ (dast/evidence_        │
+                                 │  collector.py)         │
+                                 └───────────┬────────────┘
+                                             │
+                                 ┌───────────▼────────────┐
+                                 │  Normalizer & Mapper   │
+                                 │  (OWASP Top 10, OWASP  │
+                                 │   API Top 10, CWE)     │
+                                 └───────────┬────────────┘
+                                             │
+                    ┌────────────────────────┼────────────────────────┐
+                    │                        │                        │
+          ┌─────────▼───────┐      ┌─────────▼───────┐      ┌─────────▼────────┐
+          │ Knowledge Base  │      │   Remediation   │      │ Report Generator │
+          │(knowledge_base/)│      │   Validator     │      │ (reports/)       │
+          │ KB, REC & Check │      │ (remediation/)  │      │ HTML + Markdown  │
+          └─────────────────┘      └─────────┬───────┘      └─────────┬────────┘
+                                             │                        │
+                                 ┌───────────▼────────────────────────▼┐
+                                 │     Interactive Web Dashboard       │
+                                 │    (dashboard/ — Port 5050)         │
+                                 │  Charts, Scan, Findings, Rem, Export│
+                                 └─────────────────────────────────────┘
 ```
-                         ┌────────────────────────┐
-                         │   Vulnerable Demo Apps  │
-                         │  (Node/Express, Flask/  │
-                         │  FastAPI)               │
-                         └───────────┬─────────────┘
-                                     │ HTTP
-                     ┌───────────────┴───────────────┐
-                     │                                │
-            ┌────────▼────────┐             ┌─────────▼────────┐
-            │  DAST Rule Engine │             │  SAST Rule Pack  │
-            │  (dast/*.py)      │             │  (rules/sast/*)  │
-            │  loads rules/dast │             │  Semgrep/Bandit/ │
-            │  runs HTTP checks │             │  ESLint          │
-            └────────┬──────────┘             └─────────┬────────┘
-                     │                                    │
-                     └───────────────┬────────────────────┘
-                                     │
-                         ┌───────────▼────────────┐
-                         │  Evidence Collector      │
-                         │  (dast/evidence_         │
-                         │   collector.py)          │
-                         └───────────┬──────────────┘
-                                     │
-                         ┌───────────▼────────────┐
-                         │  Normalizer + Mapper     │
-                         │  (OWASP Top 10, OWASP    │
-                         │   API Top 10, CWE)       │
-                         └───────────┬──────────────┘
-                                     │
-                    ┌────────────────┼─────────────────┐
-                    │                │                  │
-          ┌─────────▼───────┐ ┌──────▼───────┐ ┌────────▼────────┐
-          │ Knowledge Base    │ │ Remediation   │ │ Report Generator │
-          │ (knowledge_base/) │ │ Validation    │ │ (reports/)       │
-          │                   │ │ (remediation/)│ │ md/html/json     │
-          └───────────────────┘ └───────────────┘ └──────────────────┘
-                                                            │
-                                                  ┌─────────▼─────────┐
-                                                  │ Optional Dashboard │
-                                                  │ (dashboard/)       │
-                                                  └────────────────────┘
-```
+
+---
 
 ## 3. Component Responsibilities
 
-### 3.1 Vulnerable Demo Applications (`apps/`)
-Local-only Docker services that intentionally implement the eleven
-vulnerability classes defined in
-[`docs/vulnerability-list.md`](vulnerability-list.md): IDOR, missing admin
-authorization, mass assignment, SSRF, insecure JWT handling, NoSQL
-injection, SSTI, insecure file upload, missing security headers, XXE, and
-insecure deserialization. Each vulnerable feature gets a paired secure
-implementation in `apps/secure-api/` from Week 6 onward, so the DAST
-engine can run the same rule against both and prove the fix works.
+### 3.1 Demo Applications (`apps/`)
+- **`apps/vulnerable-api/`** — Flask application running on port **8080** intentionally exposing 14 curated vulnerability classes.
+- **`apps/secure-api/`** — Hardened counterpart running on port **8081** implementing secure coding patterns for all 14 vulnerabilities.
+- **`internal-service`** — Isolated HTTPBin container on the internal Docker network used for safe SSRF exploitation and verification.
 
 ### 3.2 DAST Rule Engine (`dast/`)
-- `rule_engine.py` — loads and validates rule files from `rules/dast/*.yml`.
-- `runner.py` — executes each rule as an HTTP request against a configured
-  target (local demo app only) and captures the response.
-- `evidence_collector.py` — turns a rule result into a structured evidence
-  record (see evidence schema in `docs/rule-format.md`).
-- `normalizer.py` — standardizes findings into one internal schema
-  regardless of whether they came from DAST or SAST, so downstream reporting
-  doesn't need to know the source.
-- `results/` — raw JSON output per run, gitignored except for a checked-in
-  sample.
+- `rule_engine.py` — Schema validator and YAML rule loader for `rules/dast/*.yml`.
+- `runner.py` — HTTP test execution driver supporting indicator checks, status checks, header checks, and multipart file uploads.
+- `auth.py` — Automated token management and multi-user login resolver for protected routes.
+- `target_safety.py` — Safety guard enforcing that requests strictly target authorized local environments.
+- `evidence_collector.py` — Records structured evidence and summary output.
+- `normalizer.py` — Maps findings to OWASP Top 10, OWASP API Top 10, and CWE taxonomies.
 
-Primary DAST targets: IDOR, missing admin authorization, SSRF, mass
-assignment, missing headers, and (partially) NoSQL injection.
+### 3.3 SAST Rule Pack (`sast/`, `rules/sast/`)
+- Custom Semgrep rules (`rules/sast/semgrep/*.yml`) scanning the source tree for dangerous patterns:
+  - Hardcoded JWT secrets (`CWE-798`)
+  - JWT algorithm 'none' acceptance (`CWE-347`)
+  - Insecure Python Pickle deserialization (`CWE-502`)
+- `sast/run_semgrep.py` normalizes static findings into the unified JSON finding schema.
 
-### 3.3 Rule Library (`rules/`)
-- `rules/dast/*.yml` — dynamic check definitions (see rule format doc).
-- `rules/sast/{semgrep,bandit,eslint}/` — static rule packs per tool.
+### 3.4 Remediation Validator (`remediation/`)
+- `remediation/validate.py` executes all DAST and SAST rules against both the vulnerable and secure targets.
+- Performs differential analysis to produce verified Before-vs-After scorecards (`FIXED`, `OPEN`, `REGRESSION`) confirming a **100% remediation rate**.
 
-Primary SAST targets: insecure JWT handling, insecure file upload
-validation, and (partially) NoSQL injection query construction.
+### 3.5 Dynamic Report Generator (`reports/`)
+- `reports/generator.py` compiles findings, metrics, and remediation evidence into publication-ready HTML and Markdown audit reports.
 
-### 3.4 Mappings (`mappings/`)
-Static YAML lookup tables (`owasp-top10.yml`, `owasp-api-top10.yml`,
-`cwe.yml`) that the normalizer consults to attach a recognized security
-category to every finding.
+### 3.6 Interactive Web Dashboard (`dashboard/`)
+- Central Flask application running on **port 5050**.
+- Visualizes executive KPIs (Severity doughnut chart, OWASP radar chart).
+- Features live scan triggers, an interactive findings inspector, before-vs-after status trackers, and 1-click report downloads.
 
-### 3.5 Knowledge Base & Remediation (`knowledge_base/`, `remediation/`)
-Human-readable reference material and the before/after comparison workflow
-that proves a fix closed a finding.
-
-### 3.6 Reporting (`reports/`)
-Generates the final technical AppSec assessment report from normalized
-findings, in Markdown/HTML/JSON.
-
-### 3.7 Optional Dashboard (`dashboard/`)
-Stretch goal. A thin read-only view over the same JSON output the report
-generator consumes — no new data model.
+---
 
 ## 4. Data Flow (Core Workflow)
 
-1. Demo app launched locally via `docker compose up -d`.
-2. DAST rule engine loads `rules/dast/*.yml` and runs each rule against the
-   target defined in its config.
-3. Each rule result is passed to the evidence collector, producing a
-   structured JSON evidence record.
-4. SAST tools run separately against the source code and emit findings in
-   the same normalized schema.
-5. The normalizer merges DAST + SAST findings and attaches OWASP/CWE
-   mapping.
-6. Secure fix is applied in `apps/secure-api/`.
-7. The same rule is re-run against the secure version; results are compared
-   and the finding is marked fixed/still-vulnerable in `remediation/`.
-8. The report generator turns the final finding set into a technical AppSec
-   report.
+1. **Deployment:** Target APIs and Dashboard start in Docker via `docker compose up -d`.
+2. **DAST Execution:** The DAST engine runs 14 declarative YAML rules against `http://localhost:8080`, recording live HTTP response evidence.
+3. **SAST Execution:** Semgrep executes custom static rules against the source repository, identifying code-level flaws.
+4. **Normalization:** Findings from DAST and SAST are normalized into standard schema with CWE and OWASP mappings.
+5. **Remediation Testing:** The validator re-executes all rules against `http://localhost:8081` and `apps/secure-api/` to verify mitigations.
+6. **Reporting & UI:** The dashboard and dynamic report generator present verified findings, risk matrices, and remediation metrics.
+
+---
 
 ## 5. Design Principles
 
-- **Rules over one-off scripts.** Every check is a declarative rule file, not
-  hardcoded logic, so No Breach can add checks later without touching the
-  engine.
-- **One normalized finding schema.** DAST and SAST findings converge on the
-  same shape before reporting, so the report generator and dashboard don't
-  need source-specific logic.
-- **Local-only targets.** The engine's HTTP client only accepts targets that
-  match an explicit local allowlist (`localhost`, `127.0.0.1`, or the
-  Docker Compose service network) — see `docs/ethical-rules.md`. This is
-  especially important for the SSRF rule, which by nature involves the demo
-  app making outbound requests; those requests must also be constrained to
-  the local network.
-- **Reusability first.** Rules, mappings, and knowledge base entries are
-  designed as standalone artifacts other No Breach engagements can import.
-- **No empty scaffolding.** Directories (`apps/`, `dast/`, `rules/`, etc.)
-  are created when the first real file lands in them, not pre-created as
-  placeholders — keeps the repo honest about what's actually built.
+- **Declarative Security Rules:** Security checks are defined as human-readable YAML files rather than hardcoded scripts.
+- **Unified Finding Schema:** DAST and SAST findings share an identical schema so downstream reporting and dashboards operate seamlessly.
+- **Strict Target Safety:** Automated safeguards prevent outbound testing against unauthorized hosts.
+- **Verified Remediation:** A finding is only considered remediated when automated test re-execution confirms the flaw is blocked.
 
-## 6. Environments
+---
 
-| Environment | Purpose |
+## 6. Progress & Milestone Summary
+
+| Phase | Milestone |
 |---|---|
-| Local Docker Compose | Runs vulnerable + secure demo apps for DAST |
-| Local filesystem | Runs SAST tools against demo app source |
-| CI (stretch goal, Week 8+) | Optional GitHub Actions run of SAST + DAST on PRs |
-
-
-## 7. Progress by Week
-
-| Week | Delivered |
-|---|---|
-| 1 | Architecture, rule format, vulnerability list, OWASP/CWE mapping |
-| 2 | Vulnerable demo app, all 11 vulnerabilities implemented and manually verified |
-| 3 | DAST engine + 9 rules across 7 vulnerabilities, verified against a live target |
-| 4 | Multipart upload support added to the engine; 2 new DAST rules (file upload, XXE), bringing DAST coverage to 9 of 11 vulnerabilities |
-| 5 | SAST rule pack (Semgrep): 3 rules covering insecure JWT handling and insecure deserialization, each verified against both vulnerable and secure code. All 11 vulnerabilities now have at least one automated rule |
-| 6 | Secure fixes in `apps/secure-api/` for all 11 vulnerabilities; remediation validation script (`remediation/validate.py`) re-runs all 14 rules against both APIs and confirms 100% remediation rate; `docs/secure-fixes.md` documents each fix |
+| **Week 1** | Architecture, rule format specification, and taxonomy mapping |
+| **Week 2** | Vulnerable API baseline implementation (blueprints & test fixtures) |
+| **Week 3** | Custom DAST rule engine, automated auth manager & safety guards |
+| **Week 4** | Advanced DAST rules (File Upload, XXE, Command Injection, Path Traversal, CORS) |
+| **Week 5** | SAST rule pack (Semgrep rules & unified schema normalization) |
+| **Week 6** | Remediated Secure API (`apps/secure-api/`) & differential validation engine |
+| **Week 7** | AppSec Knowledge Base, recommendations, and developer checklist |
+| **Week 8** | Interactive Web Dashboard, Dynamic Report Generator, and audit documentation |

@@ -9,6 +9,9 @@ from webhook_routes import webhook_bp
 from import_routes import import_bp
 from xml_routes import xml_bp
 from render_routes import render_bp
+from system_routes import system_bp
+from file_routes import file_bp
+from cors_routes import cors_bp
 
 app = Flask(__name__)
 
@@ -25,6 +28,9 @@ app.register_blueprint(webhook_bp)
 app.register_blueprint(import_bp)
 app.register_blueprint(xml_bp)
 app.register_blueprint(render_bp)
+app.register_blueprint(system_bp)
+app.register_blueprint(file_bp)
+app.register_blueprint(cors_bp)
 
 
 @app.after_request

@@ -674,3 +674,147 @@
     - https://owasp.org/Top10/A08_2021-Software_and_Data_Integrity_Failures/
     - https://cwe.mitre.org/data/definitions/502.html
     - https://docs.python.org/3/library/pickle.html#restricting-globals
+
+- id: KB-012
+  rule_ref: NB-APPSEC-012
+  name: OS Command Injection
+  category: Injection
+  affected_technology: Python / Flask, subprocess, os.system, shell execution
+  owasp_top10: A03:2021 — Injection
+  cwe: CWE-78 — Improper Neutralization of Special Elements used in an OS Command
+  severity: Critical
+
+  description: >
+    The application accepts user input (such as a hostname or IP to ping) and
+    interpolates it directly into a system shell command string executed with
+    shell=True or os.popen(). When an attacker supplies shell metacharacters
+    (such as semicolon ';', pipe '|', or ampersand '&&'), the operating system
+    shell interprets them as command delimiters and executes arbitrary shell
+    commands with the permissions of the web server process.
+
+  business_impact: >
+    Complete compromise of the underlying host or container. Attackers can
+    execute arbitrary commands to extract environment variables, source code,
+    and database credentials, pivot to internal networks, install persistent
+    backdoors, or launch denial of service attacks.
+
+  technical_impact: >
+    Full remote code execution (RCE) at the operating system level. Bypasses all
+    application-layer access controls and compromises the integrity, confidentiality,
+    and availability of the hosting environment.
+
+  detection_logic: >
+    DAST: Send a payload containing command chaining syntax (e.g.
+    '127.0.0.1; echo NB_CMD_INJECTION_SUCCESS'). If the response body contains
+    the marker string 'NB_CMD_INJECTION_SUCCESS', command injection is confirmed.
+    SAST: Identify calls to subprocess.Popen, subprocess.check_output, or
+    os.system with shell=True where arguments include user-controlled strings.
+
+  remediation_steps:
+    - Avoid invoking the system shell altogether; use built-in Python libraries
+      (such as socket or ICMP libraries) instead of shell utilities.
+    - If executing external binaries is required, pass arguments as a structured
+      list with shell=False so the OS does not invoke a command interpreter.
+    - Implement strict regex input validation allowlists (e.g. ^[a-zA-Z0-9.-]+$)
+      to reject all shell metacharacters and control characters.
+
+  secure_coding_recommendation: >
+    Never pass user input to a shell. Always use shell=False and pass command
+    arguments as discrete list items: subprocess.run(['ping', '-c', '1', host], shell=False).
+
+  references:
+    - https://owasp.org/Top10/A03_2021-Injection/
+    - https://cwe.mitre.org/data/definitions/78.html
+
+- id: KB-013
+  rule_ref: NB-APPSEC-013
+  name: Path / Directory Traversal
+  category: Access Control
+  affected_technology: REST API file endpoints, static file handlers
+  owasp_top10: A01:2021 — Broken Access Control
+  owasp_api: API1:2023 — Broken Object Level Authorization
+  cwe: CWE-22 — Improper Limitation of a Pathname to a Restricted Directory
+  severity: High
+
+  description: >
+    The endpoint accepts a filename or file path parameter from the client and
+    joins it to a base directory without verifying that the resolved path stays
+    within the intended storage boundary. An attacker using dot-dot-slash
+    ('../') sequences can traverse up the directory hierarchy and read or
+    download arbitrary files from the server's filesystem.
+
+  business_impact: >
+    Exposure of sensitive configuration files, source code, credentials,
+    cryptographic keys, or system files (such as /etc/passwd). Can lead to
+    escalation to full system takeover.
+
+  technical_impact: >
+    Unauthorized read access to any file the web application process has
+    filesystem permissions to read, causing a severe confidentiality breach.
+
+  detection_logic: >
+    DAST: Request the file download endpoint with a traversal payload such as
+    'filename=../../../../etc/passwd'. If the response returns HTTP 200 with
+    system user entries (e.g. 'root:'), directory traversal is confirmed.
+    SAST: Detect os.path.join() calls on user input without subsequent
+    canonical path resolution and commonpath / startswith boundary validation.
+
+  remediation_steps:
+    - Sanitize client-supplied filenames with werkzeug.utils.secure_filename()
+      to strip directory separators and relative path components.
+    - Resolve the canonical absolute path using os.path.abspath() and verify that
+      os.path.commonpath([target, BASE_DIR]) == BASE_DIR.
+    - Reject any traversal attempt with HTTP 403 Forbidden.
+
+  secure_coding_recommendation: >
+    Always treat client-supplied file paths as untrusted. Anchor files to a
+    strictly validated storage directory and verify canonical boundaries before
+    performing any filesystem I/O.
+
+  references:
+    - https://owasp.org/Top10/A01_2021-Broken_Access_Control/
+    - https://cwe.mitre.org/data/definitions/22.html
+
+- id: KB-014
+  rule_ref: NB-APPSEC-014
+  name: CORS Misconfiguration
+  category: Security Misconfiguration
+  affected_technology: REST API, Cross-Origin Resource Sharing
+  owasp_top10: A05:2021 — Security Misconfiguration
+  owasp_api: API8:2023 — Security Misconfiguration
+  cwe: CWE-942 — Permissive Cross-Domain Policy with Untrusted Domains
+  severity: Medium
+
+  description: >
+    The API dynamically reflects any client-supplied Origin header into the
+    Access-Control-Allow-Origin response header while simultaneously enabling
+    Access-Control-Allow-Credentials: true. This permissive configuration allows
+    malicious websites visited by authenticated users to issue cross-origin
+    requests and read sensitive API responses.
+
+  business_impact: >
+    Cross-origin data theft: malicious third-party websites can silently extract
+    user profile details, API keys, and sensitive account data from authenticated
+    users who visit an attacker-controlled site.
+
+  technical_impact: >
+    Bypasses the browser's Same-Origin Policy (SOP), exposing private API
+    responses to unauthorized external domains.
+
+  detection_logic: >
+    DAST: Send an HTTP GET request to the API with an arbitrary 'Origin: https://evil-attacker.com'
+    header. If the server responds with 'Access-Control-Allow-Origin: https://evil-attacker.com'
+    and 'Access-Control-Allow-Credentials: true', CORS misconfiguration is confirmed.
+
+  remediation_steps:
+    - Maintain a strict, hardcoded server-side allowlist of trusted origins.
+    - Only set Access-Control-Allow-Origin if the incoming Origin is present in the allowlist.
+    - Never reflect arbitrary or null Origin headers when credentials are supported.
+
+  secure_coding_recommendation: >
+    Do not trust the Origin header blindly. Use explicit allowlists for CORS,
+    and avoid enabling credentials unless strictly required by trusted domains.
+
+  references:
+    - https://owasp.org/Top10/A05_2021-Security_Misconfiguration/
+    - https://cwe.mitre.org/data/definitions/942.html

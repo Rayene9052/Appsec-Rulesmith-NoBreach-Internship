@@ -19,6 +19,7 @@ VALID_CHECK_TYPES = {
     "header_present",
     "header_absent",
     "cookie_flag_missing",
+    "header_value_contains",
 }
 
 VALID_SEVERITIES = {"Info", "Low", "Medium", "High", "Critical"}
@@ -84,7 +85,7 @@ def _validate_rule(rule, source_path):
         )
 
     check_type = rule["check_type"]
-    if check_type in ("response_indicator", "header_present", "header_absent", "cookie_flag_missing"):
+    if check_type in ("response_indicator", "header_present", "header_absent", "cookie_flag_missing", "header_value_contains"):
         if "expected_indicator" not in rule:
             raise RuleValidationError(
                 f"{source_path}: rule '{rule['id']}' uses check_type "

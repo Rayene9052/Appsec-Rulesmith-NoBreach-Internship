@@ -30,6 +30,26 @@ services:
     networks:
       - nobreach-internal
 
+  dashboard:
+    build:
+      context: .
+      dockerfile: ./dashboard/Dockerfile
+    container_name: nobreach-dashboard
+    ports:
+      - "5050:5000"
+    volumes:
+      - ./dashboard:/app/dashboard
+      - ./dast/results:/app/dast/results
+      - ./sast/results:/app/sast/results
+      - ./remediation/reports:/app/remediation/reports
+      - ./rules:/app/rules
+      - ./reports:/app/reports
+    networks:
+      - nobreach-internal
+    depends_on:
+      - vulnerable-api
+      - secure-api
+
 networks:
   nobreach-internal:
     driver: bridge

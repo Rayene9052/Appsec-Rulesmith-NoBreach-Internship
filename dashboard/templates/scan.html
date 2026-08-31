@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+{% set active_page = 'scan' %}
+
+{% block title %}Scan Launcher | NoBreach Rulesmith{% endblock %}
+{% block title_header %}Scan Launcher{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto space-y-8">
+    <!-- Controls Section -->
+    <div class="bg-slate-700 rounded-xl p-8 shadow-lg border border-slate-600/50">
+        <h2 class="text-xl font-semibold mb-6 flex items-center">
+            <span class="mr-2">🎯</span> Configuration
+        </h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Target Selector -->
+            <div>
+                <label class="block text-sm font-medium text-slate-300 mb-3">Select Target Environment</label>
+                <div class="flex bg-slate-800 rounded-lg p-1 border border-slate-600" id="target-selector">
+                    <button class="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 target-btn" data-target="vulnerable">
+                        Vulnerable API (Port 8080)
+                    </button>
+                    <button class="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors text-slate-400 hover:text-slate-200 target-btn" data-target="secure">
+                        Secure API (Port 8081)
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Actions -->
+            <div>
+                <label class="block text-sm font-medium text-slate-300 mb-3">Launch Scan</label>
+                <div class="flex space-x-4">
+                    <button id="btn-dast" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-medium py-2 px-4 rounded-lg shadow transition-colors flex items-center justify-center border border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50">
+                        <span class="mr-2">🔍</span> Run DAST Scan
+                    </button>
+                    <button id="btn-sast" class="flex-1 bg-purple-600 hover:bg-purple-500 text-white font-medium py-2 px-4 rounded-lg shadow transition-colors flex items-center justify-center border border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-opacity-50">
+                        <span class="mr-2">📝</span> Run SAST Scan
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Area -->
+    <div id="scan-status" class="hidden bg-slate-800/80 backdrop-blur border border-cyan-500/30 rounded-xl p-6 flex flex-col items-center justify-center space-y-4">
+        <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-400"></div>
+        <h3 class="text-lg font-medium text-cyan-400">Scan in progress...</h3>
+        <p class="text-sm text-slate-400" id="scan-target-text">Target: Vulnerable API (Port 8080)</p>
+    </div>
+
+    <!-- Results Area -->
+    <div id="scan-results" class="hidden space-y-4">
+        <h2 class="text-xl font-semibold mb-4 flex items-center">
+            <span class="mr-2">📊</span> Scan Results
+        </h2>
+        
+        <div id="results-empty" class="hidden bg-green-500/10 border border-green-500/30 rounded-xl p-8 text-center">
+            <div class="text-5xl mb-4">✅</div>
+            <h3 class="text-xl font-medium text-green-400">No vulnerabilities detected</h3>
+            <p class="text-slate-400 mt-2">The target environment appears secure against the current rule pack.</p>
+        </div>
+        
+        <div id="results-table-container" class="hidden bg-slate-700 rounded-xl shadow-lg border border-slate-600/50 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-800 border-b border-slate-600 text-slate-300 text-sm">
+                            <th class="py-4 px-6 font-semibold w-24">Severity</th>
+                            <th class="py-4 px-6 font-semibold w-32">Rule ID</th>
+                            <th class="py-4 px-6 font-semibold">Title</th>
+                            <th class="py-4 px-6 font-semibold">Endpoint / Path</th>
+                            <th class="py-4 px-6 font-semibold hidden md:table-cell">Evidence</th>
+                        </tr>
+                    </thead>
+                    <tbody id="results-tbody" class="divide-y divide-slate-600/50">
+                        <!-- Rows populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="bg-slate-800 p-4 border-t border-slate-600 text-sm text-slate-400 flex justify-between items-center">
+                <span id="results-count">Total findings: 0</span>
+                <span id="results-time">Engine: DAST</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        let currentTarget = 'vulnerable';
+        const targetBtns = document.querySelectorAll('.target-btn');
+        const btnDast = document.getElementById('btn-dast');
+        const btnSast = document.getElementById('btn-sast');
+        
+        const statusDiv = document.getElementById('scan-status');
+        const targetText = document.getElementById('scan-target-text');
+        
+        const resultsDiv = document.getElementById('scan-results');
+        const emptyDiv = document.getElementById('results-empty');
+        const tableContainer = document.getElementById('results-table-container');
+        const tbody = document.getElementById('results-tbody');
+        const countSpan = document.getElementById('results-count');
+
+        targetBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                targetBtns.forEach(b => {
+                    b.classList.remove('bg-cyan-500/20', 'text-cyan-400', 'border-cyan-500/30', 'border');
+                    b.classList.add('text-slate-400', 'border-transparent');
+                });
+                this.classList.remove('text-slate-400', 'border-transparent');
+                this.classList.add('bg-cyan-500/20', 'text-cyan-400', 'border-cyan-500/30', 'border');
+                currentTarget = this.dataset.target;
+            });
+        });
+
+        const getSeverityBadge = (severity) => {
+            const s = (severity || '').toLowerCase();
+            if (s === 'critical') return '<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-red-500/20 text-red-400 border border-red-500/30">Critical</span>';
+            if (s === 'high') return '<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-orange-500/20 text-orange-400 border border-orange-500/30">High</span>';
+            if (s === 'medium') return '<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">Medium</span>';
+            if (s === 'low') return '<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-400 border border-blue-500/30">Low</span>';
+            return `<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-500/20 text-slate-300 border border-slate-500/30">${severity}</span>`;
+        };
+
+        const renderResults = (findings) => {
+            resultsDiv.classList.remove('hidden');
+            
+            if (!findings || findings.length === 0) {
+                emptyDiv.classList.remove('hidden');
+                tableContainer.classList.add('hidden');
+            } else {
+                emptyDiv.classList.add('hidden');
+                tableContainer.classList.remove('hidden');
+                
+                tbody.innerHTML = '';
+                findings.forEach((f, i) => {
+                    const bgClass = i % 2 === 0 ? 'bg-slate-700' : 'bg-slate-750';
+                    const tr = document.createElement('tr');
+                    tr.className = `${bgClass} hover:bg-slate-600 transition-colors`;
+                    
+                    const evidence = (f.evidence || '').substring(0, 50) + (f.evidence && f.evidence.length > 50 ? '...' : '');
+                    
+                    tr.innerHTML = `
+                        <td class="py-3 px-6">${getSeverityBadge(f.severity)}</td>
+                        <td class="py-3 px-6 font-mono text-xs text-slate-300">${f.rule_id || 'N/A'}</td>
+                        <td class="py-3 px-6 text-sm">${f.title || 'Unknown'}</td>
+                        <td class="py-3 px-6 font-mono text-xs text-cyan-300">${f.endpoint || f.path || 'N/A'}</td>
+                        <td class="py-3 px-6 text-xs text-slate-400 hidden md:table-cell font-mono truncate max-w-xs">${evidence}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+                countSpan.textContent = `Total findings: ${findings.length}`;
+            }
+        };
+
+        const runScan = async (type) => {
+            statusDiv.classList.remove('hidden');
+            resultsDiv.classList.add('hidden');
+            btnDast.disabled = true;
+            btnSast.disabled = true;
+            btnDast.classList.add('opacity-50', 'cursor-not-allowed');
+            btnSast.classList.add('opacity-50', 'cursor-not-allowed');
+            
+            const targetLabel = currentTarget === 'vulnerable' ? 'Vulnerable API (Port 8080)' : 'Secure API (Port 8081)';
+            targetText.textContent = `Target: ${targetLabel} | Engine: ${type.toUpperCase()}`;
+
+            try {
+                const response = await fetch(`/api/scan/${type}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ target: currentTarget })
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    const raw = Array.isArray(data) ? data : (data.findings || []);
+                    const findings = raw.filter(f => f.vulnerable !== false);
+                    renderResults(findings);
+                } else {
+                    renderResults([]);
+                }
+            } catch (err) {
+                console.error("Scan failed:", err);
+                renderResults([]);
+            } finally {
+                statusDiv.classList.add('hidden');
+                btnDast.disabled = false;
+                btnSast.disabled = false;
+                btnDast.classList.remove('opacity-50', 'cursor-not-allowed');
+                btnSast.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        };
+
+        btnDast.addEventListener('click', () => runScan('dast'));
+        btnSast.addEventListener('click', () => runScan('sast'));
+    });
+</script>
+{% endblock %}
